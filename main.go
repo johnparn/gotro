@@ -2,18 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/veandco/go-sdl2/img"
-	"github.com/veandco/go-sdl2/mix"
-	"github.com/veandco/go-sdl2/sdl"
-	"math/rand"
+	"math"
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/intuitionamiga/gotro/effects"
+	"github.com/veandco/go-sdl2/img"
+	"github.com/veandco/go-sdl2/mix"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 const (
-	FPS                       = 60
-	windowWidth, windowHeight = 800, 600
+	FPS          = 60
+	windowWidth  = 800
+	windowHeight = 600
 )
 
 var window *sdl.Window
@@ -23,50 +26,33 @@ func main() {
 	sdlInitVideo()
 	sdlInitImage()
 	sdlInitAudio()
+
 	window = createWindow()
 	renderer = createRenderer()
 	var _ = sdl.PollEvent() //MacOS won't draw the window without this line
 
-	//Start intro
-	//_ = showKickstart()
-	//playFloppySounds()
-	//time.Sleep(time.Second * 2)
-	//
-	//backgroundFill(255, 255, 255) //Fill bg with white
-	//time.Sleep(time.Second * 9)
-	//decrunch(100)
-
 	playMusic()
+	drawSceneScroll()
 
-	//wipeLeft(255, 0, 90)
-	//wipeRight(0, 120, 128)
-	//horizontalBars2(30, 0, 95, 30, 055, 200)
-	//wipeLeft(0, 120, 128)
-	//wipeRight(255, 0, 90)
-	//wipeLeft(255, 0, 90)
-	//
-	//boingBall(255, 0, 90)
-	//
-	rasterBars()
-	rainbowScroll()
-	//
-	wipeTopDown(0, 0, 0)
-	drawBubbles()
-	wipeTopDown(0, 0, 0)
+	drawScenePlasma()
+	drawStars2()
+	drawScenePlasma2()
 
-	//wipeLeft(95, 95, 0)
-	//wipeRight(0, 95, 0)
-
-	horizontalBars(0, 0, 95, 0, 055, 200)
-	//horizontalBars(30, 0, 95, 30, 055, 200)
-
-	wipeTopDown(0, 0, 0)
-	//wipeLeft(0, 0, 0)
-	//wipeRight(0, 0, 0)
+	drawSceneSinus(sdl.GetTicks64())
+	drawDotTunnel()
+	drawDotSphere()
+	drawTwister()
+	// drawBoingBall(192, 102, 0)
 
 	_ = renderer.Destroy()
 	_ = window.Destroy()
+
 }
+
+func sleepSeconds(secs time.Duration) {
+	time.Sleep(time.Second * secs)
+}
+
 func sdlInitVideo() {
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	if err != nil {
@@ -76,6 +62,7 @@ func sdlInitVideo() {
 
 	defer sdl.Quit()
 }
+
 func sdlInitImage() {
 	err := img.Init(img.INIT_PNG)
 	if err != nil {
@@ -85,6 +72,7 @@ func sdlInitImage() {
 
 	defer img.Quit()
 }
+
 func sdlInitAudio() {
 	errSDLAudioInit := sdl.Init(sdl.INIT_AUDIO)
 	if errSDLAudioInit != nil {
@@ -105,13 +93,14 @@ func sdlInitAudio() {
 	}
 
 }
+
 func createWindow() *sdl.Window {
-	window, errCreatingSDLWindow := sdl.CreateWindow("Gotro by Intuition",
+	window, errCreatingSDLWindow := sdl.CreateWindow("Intro",
 		sdl.WINDOWPOS_CENTERED,
 		sdl.WINDOWPOS_CENTERED,
 		windowWidth,
 		windowHeight,
-		sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
+		sdl.WINDOW_MAXIMIZED|sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
 
 	if errCreatingSDLWindow != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to create SDL window: %s\n", errCreatingSDLWindow)
@@ -119,35 +108,32 @@ func createWindow() *sdl.Window {
 	}
 	return window
 }
+
 func createRenderer() *sdl.Renderer {
 
 	var numDrivers, _ = sdl.GetNumRenderDrivers()
-	fmt.Println(numDrivers)
+	fmt.Println("Render drivers", numDrivers)
 
 	var errCreatingSDLRenderer error
 	sdl.SetHint(sdl.HINT_RENDER_VSYNC, "1")
+	sdl.SetHint(sdl.HINT_RENDER_SCALE_QUALITY, "1")
 	if runtime.GOOS == "darwin" {
 		sdl.SetHint(sdl.HINT_RENDER_DRIVER, "software")
 	} else {
 		sdl.SetHint(sdl.HINT_RENDER_DRIVER, "opengl")
 	}
+
 	renderer, errCreatingSDLRenderer = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC|sdl.RENDERER_TARGETTEXTURE)
+	renderer.RenderSetVSync(true)
 
-	/*
-		for i := 0; i < numDrivers; i++ {
-			driverInfo, _ := renderer.GetInfo()
-			fmt.Println("Driver name (", i, "): ", driverInfo.Name)
-			//if (driverInfo.Name == "SDL_RENDERER_SOFTWARE") {fmt.Println(" the renderer is a software fallback")}
-			//if (driverInfo.Name == "SDL_RENDERER_ACCELERATED") {fmt.Println(" the renderer uses hardware acceleration")}
-			//if (driverInfo.Name == "SDL_RENDERER_PRESENTVSYNC") {fmt.Println(" present	is synchronized with the refresh rate")}
-			//if (driverInfo.Name == "SDL_RENDERER_TARGETTEXTURE") {fmt.Println( " the renderer supports rendering to texture")}
-		}
-	*/
+	for i := 0; i < numDrivers; i++ {
+		driverInfo, _ := renderer.GetInfo()
+		fmt.Println("Driver name (", i, "): ", driverInfo.Name)
+	}
 
-	/*var info sdl.RendererInfo
-	info, _ =renderer.GetInfo()
-	fmt.Println(info.Name)
-	*/
+	var info sdl.RendererInfo
+	info, _ = renderer.GetInfo()
+	fmt.Println("RenderInfo", info.Name, info.RendererInfoData)
 
 	if errCreatingSDLRenderer != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", errCreatingSDLRenderer)
@@ -155,84 +141,7 @@ func createRenderer() *sdl.Renderer {
 	}
 	return renderer
 }
-func showKickstart() error {
-	/*
-		t, err := img.LoadTexture(renderer, "kick13.png")
-		if err != nil {
-			return fmt.Errorf("couldn't load image from disk")
-		}
-		if err := renderer.Copy(t, nil, nil); err != nil {
-			return fmt.Errorf("couldn't copy texture: %v", err)
-		}
-		_ = renderer.SetDrawColor(255, 255, 255, 0)
-		//updateScreen("r")
-		renderer.Present()
-		return err
-	*/
-	kickrect := sdl.Rect{W: 800, H: 600}
-	s, _ := img.Load("kick13.png")
-	t, _ := renderer.CreateTextureFromSurface(s)
-	err := renderer.Copy(t, nil, &kickrect)
-	if err != nil {
-		return err
-	}
-	updateScreen()
-	err = renderer.Clear()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func playFloppySounds() {
-	if music, errLoadingMusic := mix.LoadMUS("./floppy.mp3"); errLoadingMusic != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Failed to load music from disk: %s\n", errLoadingMusic)
-		os.Exit(1)
-	} else {
-		_ = music.Play(1)
-	}
-}
-func backgroundFill(R, G, B uint8) {
-	drawFillRect(0, 0, windowWidth, windowHeight, R, G, B)
-	updateScreen()
-	_ = renderer.Clear()
-}
-func decrunch(loops int) {
-	var startY, n int32 = 0, 0
-	for x := 0; x <= loops; x++ {
-		n = 0
-		for i := 0; i <= windowHeight; i++ {
-			drawFillRect(0, n+startY, windowWidth, 8, 46, 43, 95)
-			drawFillRect(0, n+startY+8, windowWidth, 8, 255, 0, 0)
-			drawFillRect(0, n+startY+16, windowWidth, 8, 139, 0, 255)
-			drawFillRect(0, n+startY+24, windowWidth, 8, 255, 255, 0)
-			drawFillRect(0, n+startY+32, windowWidth, 8, 0, 255, 0)
-			n += 40
-		}
-		updateScreen()
-		n = 0
-		for i := 0; i <= windowHeight; i++ {
-			drawFillRect(0, n+startY, windowWidth, 4, 0, 255, 0)
-			drawFillRect(0, n+startY+6, windowWidth, 4, 255, 255, 0)
-			drawFillRect(0, n+startY+14, windowWidth, 4, 46, 43, 95)
-			drawFillRect(0, n+startY+22, windowWidth, 4, 255, 0, 0)
-			drawFillRect(0, n+startY+30, windowWidth, 4, 139, 0, 255)
-			n += 40
-		}
-		updateScreen()
-		n = 0
-		for i := 0; i <= windowHeight; i++ {
-			drawFillRect(0, n+startY, windowWidth, 12, 70, 55, 0)
-			drawFillRect(0, n+startY+11, windowWidth, 12, 55, 25, 70)
-			drawFillRect(0, n+startY+19, windowWidth, 12, 46, 113, 5)
-			drawFillRect(0, n+startY+27, windowWidth, 12, 25, 0, 70)
-			drawFillRect(0, n+startY+35, windowWidth, 12, 13, 70, 55)
-			n += 40
-		}
-		updateScreen()
-	}
-	backgroundFill(255, 255, 255) //Fill bg with white
-	sdl.Delay(1000)
-}
+
 func playMusic() {
 	if music, errLoadingMusic := mix.LoadMUS("echoing.mod"); errLoadingMusic != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to load music from disk: %s\n", errLoadingMusic)
@@ -242,294 +151,451 @@ func playMusic() {
 	}
 }
 
-var currentColor sdl.Color
+func drawDotTunnel() {
 
-func setDrawColor(r, g, b uint8) {
-	color := sdl.Color{R: r, G: g, B: b, A: 255}
-	if color != currentColor {
-		renderer.SetDrawColor(r, g, b, 255)
-		currentColor = color
-	}
-}
+	var running bool = true
 
-func drawPixel(x, y int32, r, g, b uint8) {
-	setDrawColor(r, g, b)
-	renderer.DrawPoint(x, y)
-}
-
-var currentFillColor sdl.Color
-
-func setFillColor(r, g, b uint8) {
-	color := sdl.Color{R: r, G: g, B: b, A: 255}
-	if color != currentFillColor {
-		renderer.SetDrawColor(r, g, b, 255)
-		currentFillColor = color
-	}
-}
-
-func drawFillRect(x, y, w, h int32, r, g, b uint8) {
-	setFillColor(r, g, b)
-	rect := sdl.Rect{X: x, Y: y, W: w, H: h}
-	renderer.FillRect(&rect)
-}
-
-func wipeLeft(R, G, B uint8) {
-	var i int32 = 0
-	//Mid to left full length screen wipe
-	renderer.Clear()
-	for i = 0; i <= (windowWidth / 2); i++ {
-		drawFillRect((windowWidth/2)-i, 0, i, windowHeight, R, G, B)
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
+	effects.InitializeTunnel(renderer, windowWidth, windowHeight)
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
+			}
 		}
+		effects.RenderDotTunnel(float64(sdl.GetTicks64()))
+		updateScreen()
 	}
 }
 
-func wipeRight(R, G, B uint8) {
-	var i int32 = 0
-	renderer.Clear()
-	//Mid to left full length screen wipe
-	for i = 0; i <= (windowWidth / 2); i++ {
-		drawFillRect(windowWidth/2, 0, i+1, windowHeight, R, G, B)
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
+func drawDotSphere() {
+
+	var running bool = true
+
+	effects.InitializeDotSphere(renderer, windowWidth, windowHeight)
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
+			}
 		}
+		effects.RenderDotSphere(float64(sdl.GetTicks64()))
+		updateScreen()
 	}
 }
 
-func drawSprite(x, y int32, R, G, B uint8) {
-	src := sdl.Rect{W: 455, H: 456}
-	dst := sdl.Rect{X: x, Y: y, W: 128, H: 128}
-	sprite, _ := img.Load("boingball.png")
-	texture, _ := renderer.CreateTextureFromSurface(sprite)
-	_ = renderer.SetDrawColor(R, G, B, 255)
-	_ = renderer.Clear()
-	_ = renderer.Copy(texture, &src, &dst)
-	updateScreen()
-}
+func drawTwister() {
 
-func boingBall(R, G, B uint8) {
-	var xPos, yPos int
-	for i := 0; i <= (windowHeight - 128); i++ {
-		drawSprite(int32(i), int32(i), R, G, B)
-		xPos = i
-		yPos = i
-	}
-	for i := xPos; i <= (windowWidth - 128); i++ {
-		drawSprite(int32(i), int32(yPos+10), R, G, B)
-		yPos -= 1
-		xPos = i
-	}
-	for i := yPos; i >= 0; i-- {
-		drawSprite(int32(xPos+i), int32(i), R, G, B)
-		xPos = i
-		yPos = -i
-	}
-}
+	var running bool = true
 
-func rasterBars() {
-	var startX int32 = windowWidth
-	var redY int32 = 0
-	var greenY = int32(windowHeight / 3)
-	var blueY = int32((windowHeight / 3) * 2)
-
-	redBar := func() {
-		for i := int32(0); i <= 35; i++ {
-			//Red
-			redY += i
-			drawFillRect(startX-windowWidth, redY+24, windowWidth, 4, 8, 0, 0)
-			drawFillRect(startX-windowWidth, redY+20, windowWidth, 4, 16, 0, 0)
-			drawFillRect(startX-windowWidth, redY+16, windowWidth, 4, 32, 0, 0)
-			drawFillRect(startX-windowWidth, redY+12, windowWidth, 4, 63, 0, 0)
-			drawFillRect(startX-windowWidth, redY+8, windowWidth, 4, 127, 0, 0)
-			drawFillRect(startX-windowWidth, redY+4, windowWidth, 4, 191, 0, 0)
-			drawFillRect(startX-windowWidth, redY, windowWidth, 4, 255, 0, 0)
-			drawFillRect(startX-windowWidth, redY-4, windowWidth, 4, 191, 0, 0)
-			drawFillRect(startX-windowWidth, redY-8, windowWidth, 4, 127, 0, 0)
-			drawFillRect(startX-windowWidth, redY-12, windowWidth, 4, 63, 0, 0)
-			drawFillRect(startX-windowWidth, redY-16, windowWidth, 4, 32, 0, 0)
-			drawFillRect(startX-windowWidth, redY-20, windowWidth, 4, 16, 0, 0)
-			drawFillRect(startX-windowWidth, redY-24, windowWidth, 4, 8, 0, 0)
-			time.Sleep(time.Second / 8)
-			updateScreen()
-		}
-	}
-
-	greenBar := func() {
-		for i := int32(0); i <= 35; i++ {
-			//Green
-			greenY += i
-			drawFillRect(startX-windowWidth, greenY+24, windowWidth, 4, 0, 8, 0)
-			drawFillRect(startX-windowWidth, greenY+20, windowWidth, 4, 0, 16, 0)
-			drawFillRect(startX-windowWidth, greenY+16, windowWidth, 4, 0, 32, 0)
-			drawFillRect(startX-windowWidth, greenY+12, windowWidth, 4, 0, 63, 0)
-			drawFillRect(startX-windowWidth, greenY+8, windowWidth, 4, 0, 127, 0)
-			drawFillRect(startX-windowWidth, greenY+4, windowWidth, 4, 0, 191, 0)
-			drawFillRect(startX-windowWidth, greenY, windowWidth, 4, 0, 255, 0)
-			drawFillRect(startX-windowWidth, greenY-4, windowWidth, 4, 0, 191, 0)
-			drawFillRect(startX-windowWidth, greenY-8, windowWidth, 4, 0, 127, 0)
-			drawFillRect(startX-windowWidth, greenY-12, windowWidth, 4, 0, 63, 0)
-			drawFillRect(startX-windowWidth, greenY-16, windowWidth, 4, 0, 32, 0)
-			drawFillRect(startX-windowWidth, greenY-20, windowWidth, 4, 0, 16, 0)
-			drawFillRect(startX-windowWidth, greenY-24, windowWidth, 4, 0, 8, 0)
-			time.Sleep(time.Second / 8)
-			updateScreen()
-		}
-	}
-	blueBar := func() {
-		for i := int32(0); i <= 35; i++ {
-			//Blue
-			blueY += i
-			drawFillRect(startX-windowWidth, blueY+24, windowWidth, 4, 0, 0, 8)
-			drawFillRect(startX-windowWidth, blueY+20, windowWidth, 4, 0, 0, 16)
-			drawFillRect(startX-windowWidth, blueY+16, windowWidth, 4, 0, 0, 32)
-			drawFillRect(startX-windowWidth, blueY+12, windowWidth, 4, 0, 0, 63)
-			drawFillRect(startX-windowWidth, blueY+8, windowWidth, 4, 0, 0, 127)
-			drawFillRect(startX-windowWidth, blueY+4, windowWidth, 4, 0, 0, 191)
-			drawFillRect(startX-windowWidth, blueY, windowWidth, 4, 0, 0, 255)
-			drawFillRect(startX-windowWidth, blueY-4, windowWidth, 4, 0, 0, 191)
-			drawFillRect(startX-windowWidth, blueY-8, windowWidth, 4, 0, 0, 127)
-			drawFillRect(startX-windowWidth, blueY-12, windowWidth, 4, 0, 0, 63)
-			drawFillRect(startX-windowWidth, blueY-16, windowWidth, 4, 0, 0, 32)
-			drawFillRect(startX-windowWidth, blueY-20, windowWidth, 4, 0, 0, 16)
-			drawFillRect(startX-windowWidth, blueY-24, windowWidth, 4, 0, 0, 8)
-			time.Sleep(time.Second / 8)
-			updateScreen()
-		}
-	}
-
-	redBar()
-	greenBar()
-	blueBar()
-}
-func rainbowScroll() {
-	var startY int32 = windowHeight/2 + 16
-	renderer.Clear()
-	for i := 0; i < windowWidth; i++ {
-		drawFillRect(windowWidth-int32(i), startY-48, 30, 16, 255, 0, 0)
-		drawFillRect(windowWidth-int32(i), startY-32, 30, 16, 255, 127, 0)
-		drawFillRect(windowWidth-int32(i), startY-16, 30, 16, 255, 255, 0)
-		drawFillRect(windowWidth-int32(i), startY, 30, 16, 0, 255, 0)
-		drawFillRect(windowWidth-int32(i), startY+16, 30, 16, 0, 0, 255)
-		drawFillRect(windowWidth-int32(i), startY+32, 30, 16, 46, 43, 95)
-		drawFillRect(windowWidth-int32(i), startY+48, 30, 16, 139, 0, 255)
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
-		}
-	}
-}
-func wipeTopDown(R, G, B uint8) {
-	var i int32
-	//Clear top to bottom
-	renderer.Clear()
-	for i = 1; i <= windowHeight; i++ {
-		drawFillRect(0, 0, windowWidth, 0+i, R, G, B)
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
-		}
-	}
-}
-
-func drawCircle(x0, y0, r int32, R, G, B uint8) {
-	var x, y, dx, dy int32 = r - 1, 0, 1, 1
-	var err = dx - (r * 2)
-
-	for x > y {
-		drawPixel(x0+x, y0+y, R, G, B)
-		drawPixel(x0+y, y0+x, R, G, B)
-		drawPixel(x0-y, y0+x, R, G, B)
-		drawPixel(x0-x, y0+y, R, G, B)
-		drawPixel(x0-x, y0-y, R, G, B)
-		drawPixel(x0-y, y0-x, R, G, B)
-		drawPixel(x0+y, y0-x, R, G, B)
-		drawPixel(x0+x, y0-y, R, G, B)
-
-		if err <= 0 {
-			y++
-			err += dy
-			dy += 2
+	effects.InitTwister(renderer, windowWidth, windowHeight)
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
 		}
 
-		if err > 0 {
-			x--
-			dx += 2
-			err += dx - (r * 2)
-		}
+		effects.RunTwister()
+		updateScreen()
 	}
 }
-func drawBubbles() {
-	_ = renderer.SetDrawColor(0, 0, 0, 0)
-	_ = renderer.Clear()
-	for i := 0; i <= 300; i++ {
-		drawCircle(int32(rand.Intn(800)), int32(rand.Intn(600)), int32(rand.Intn(80)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)))
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
+
+func drawBoingBall(R, G, B uint8) {
+
+	var running bool = true
+
+	// backgroundFill(0, 0, 0)
+	renderer.SetDrawColor(R, G, B, 255)
+	renderer.DrawRect(&sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight})
+	effects.InitBoingball(renderer, windowWidth, windowHeight, 128, 64, 32)
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
 		}
-		time.Sleep(time.Second / 500)
+		effects.BoingBall()
+		updateScreen()
 	}
 }
-func horizontalBars(R1, G1, B1, R2, G2, B2 uint8) {
-	var i int32
-	// Horizontal bars
-	for i = 1; i < windowWidth; i++ {
-		//L2R
-		drawFillRect(0+i, 0, 60, 60, R1, G1, B1)
-		drawFillRect(0+i, 120, 60, 60, R1, G1, B1)
-		drawFillRect(0+i, 240, 60, 60, R1, G1, B1)
-		drawFillRect(0+i, 360, 60, 60, R1, G1, B1)
-		drawFillRect(0+i, 480, 60, 60, R1, G1, B1)
-		//R2L
-		drawFillRect(windowWidth-i, 60, 60, 60, R2, G2, B2)
-		drawFillRect(windowWidth-i, 180, 60, 60, R2, G2, B2)
-		drawFillRect(windowWidth-i, 300, 60, 60, R2, G2, B2)
-		drawFillRect(windowWidth-i, 420, 60, 60, R2, G2, B2)
-		drawFillRect(windowWidth-i, 540, 60, 60, R2, G2, B2)
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
+
+func drawSceneScroll() {
+
+	effects.InitScroller(renderer, windowWidth, windowHeight, true)
+	effects.InitializeStars2(renderer, windowWidth, windowHeight)
+
+	// scrollSettings2 := rotateScroller.InitScroller(renderer, windowWidth, windowHeight, false)
+	var running bool = true
+	var rgbColors [2]effects.RGBColor
+	// var startTick uint64 = sdl.GetTicks64()
+
+	rgbColors[0] = effects.RGBColor{
+		R: effects.Color{Value: uint8(255), Increment: -1},
+		G: effects.Color{Value: uint8(0), Increment: 1},
+		B: effects.Color{Value: uint8(255), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rgbColors[1] = effects.RGBColor{
+		R: effects.Color{Value: uint8(51), Increment: 1},
+		G: effects.Color{Value: uint8(153), Increment: 1},
+		B: effects.Color{Value: uint8(201), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	var sine [2]effects.Sine
+	sine[0] = effects.Sine{
+		Amplitude: 0.0,
+		Step:      0.0025,
+		Threshold: 0.25,
+		AmpDown:   true,
+		OffsetX:   0,
+		OffsetY:   0,
+		Frequency: (math.Pi / FPS),
+		Angle:     math.Pi,
+		RGBColor:  rgbColors[0],
+	}
+
+	sine[1] = effects.Sine{
+		Amplitude: 0.0,
+		Step:      0.0025,
+		Threshold: 0.30,
+		AmpDown:   true,
+		OffsetX:   0,
+		OffsetY:   0,
+		Frequency: (math.Pi / FPS),
+		Angle:     math.Pi,
+		RGBColor:  rgbColors[1],
+	}
+
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
 		}
+		// renderer.Clear()
+		renderer.SetDrawColor(15, 15, 23, 1)
+		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
+		// rasterBars()
+		effects.RunStars2()
+		effects.SineWave(renderer, &sine[0], windowWidth, windowHeight)
+		effects.SineWave(renderer, &sine[1], windowWidth, windowHeight)
+		effects.RunScroller()
+
+		// if sdl.GetTicks64() >= startTick+40000 {
+		// 	running = false
+		// 	break
+		// }
+		updateScreen()
+
 	}
 }
-func horizontalBars2(R1, G1, B1, R2, G2, B2 uint8) {
-	var i int32
-	//Horizontal bars 2
-	//_ = renderer.SetDrawColor(0, 120, 128,0)
-	//_ = renderer.Clear()
-	for i = 1; i < windowWidth; i++ {
-		//L2R
-		drawFillRect(windowWidth-i, 60, 60, 60, R1, G1, B1)
-		drawFillRect(windowWidth-i, 180, 60, 60, R1, G1, B1)
-		drawFillRect(windowWidth-i, 300, 60, 60, R1, G1, B1)
-		drawFillRect(windowWidth-i, 420, 60, 60, R1, G1, B1)
-		drawFillRect(windowWidth-i, 540, 60, 60, R1, G1, B1)
-		//R2L
-		drawFillRect(0+i, 0, 60, 60, R2, G2, B2)
-		drawFillRect(0+i, 120, 60, 60, R2, G2, B2)
-		drawFillRect(0+i, 240, 60, 60, R2, G2, B2)
-		drawFillRect(0+i, 360, 60, 60, R2, G2, B2)
-		drawFillRect(0+i, 480, 60, 60, R2, G2, B2)
-		// Update the screen periodically to maintain animation
-		if i%2 == 0 {
-			updateScreen()
+
+func drawStars2() {
+
+	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
+	effects.InitializeStars2(renderer, windowWidth, windowHeight)
+
+	var running bool = true
+
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
 		}
+
+		effects.RunStars2()
+		updateScreen()
 	}
 }
+
+func drawScenePlasma2() {
+
+	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
+	effects.InitializePlasma2(renderer, int(windowWidth), int(windowHeight))
+
+	var running bool = true
+
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
+		}
+
+		effects.RunPlasma2()
+
+		// Moving plasma
+		// plasma = effects.RunPlasma(&plasma)
+
+		updateScreen()
+	}
+}
+
+func drawScenePlasma() {
+
+	var startTick uint64 = sdl.GetTicks64()
+
+	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
+	effects.InitPlasma(renderer, windowWidth, windowHeight)
+
+	var running bool = true
+
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
+		}
+
+		effects.RunPlasma()
+
+		if sdl.GetTicks64() >= startTick+8000 {
+			//running = false
+			break
+		}
+		updateScreen()
+	}
+}
+
+func drawSceneSinus(startTick uint64) {
+
+	var amp float64 = 0.0
+	var frequency float64 = (math.Pi / FPS)
+	var angle float64 = math.Pi
+	var running bool = true
+
+	// // Define start colors for curves
+	var rbgColors [8]effects.RGBColor
+
+	rbgColors[0] = effects.RGBColor{
+		R: effects.Color{Value: uint8(255), Increment: -1},
+		G: effects.Color{Value: uint8(0), Increment: 1},
+		B: effects.Color{Value: uint8(0), Increment: 1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rbgColors[1] = effects.RGBColor{
+		R: effects.Color{Value: uint8(0), Increment: 1},
+		G: effects.Color{Value: uint8(255), Increment: -1},
+		B: effects.Color{Value: uint8(0), Increment: 1},
+		A: effects.Color{Value: uint8(0), Increment: 1},
+	}
+
+	rbgColors[2] = effects.RGBColor{
+		R: effects.Color{Value: uint8(0), Increment: 1},
+		G: effects.Color{Value: uint8(0), Increment: 1},
+		B: effects.Color{Value: uint8(255), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rbgColors[3] = effects.RGBColor{
+		R: effects.Color{Value: uint8(255), Increment: -1},
+		G: effects.Color{Value: uint8(255), Increment: -1},
+		B: effects.Color{Value: uint8(0), Increment: 1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rbgColors[4] = effects.RGBColor{
+		R: effects.Color{Value: uint8(0), Increment: 1},
+		G: effects.Color{Value: uint8(255), Increment: -1},
+		B: effects.Color{Value: uint8(255), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rbgColors[5] = effects.RGBColor{
+		R: effects.Color{Value: uint8(255), Increment: -1},
+		G: effects.Color{Value: uint8(0), Increment: 1},
+		B: effects.Color{Value: uint8(255), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rbgColors[6] = effects.RGBColor{
+		R: effects.Color{Value: uint8(51), Increment: 1},
+		G: effects.Color{Value: uint8(153), Increment: 1},
+		B: effects.Color{Value: uint8(201), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rbgColors[7] = effects.RGBColor{
+		R: effects.Color{Value: uint8(153), Increment: -1},
+		G: effects.Color{Value: uint8(0), Increment: 1},
+		B: effects.Color{Value: uint8(201), Increment: 1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	effects.ResetStars(renderer, windowWidth, windowHeight)
+
+	var sine [6]effects.Sine
+	sine[0] = effects.Sine{
+		Amplitude: amp,
+		Step:      0.0025,
+		Threshold: 0.25,
+		AmpDown:   true,
+		OffsetX:   0,
+		OffsetY:   0,
+		Frequency: frequency,
+		Angle:     angle,
+		RGBColor:  rbgColors[1],
+	}
+	sine[1] = effects.Sine{
+		Amplitude: amp,
+		Step:      0.0025,
+		Threshold: 0.30,
+		AmpDown:   true,
+		OffsetX:   10,
+		OffsetY:   0,
+		Frequency: frequency,
+		Angle:     angle,
+		RGBColor:  rbgColors[2],
+	}
+	sine[2] = effects.Sine{
+		Amplitude: amp,
+		Step:      0.0025,
+		Threshold: 0.15,
+		AmpDown:   true,
+		OffsetX:   20,
+		OffsetY:   0,
+		Frequency: frequency,
+		Angle:     angle,
+		RGBColor:  rbgColors[5],
+	}
+	sine[3] = effects.Sine{
+		Amplitude: amp,
+		Step:      0.0020,
+		Threshold: 0.25,
+		AmpDown:   true,
+		OffsetX:   40,
+		OffsetY:   0,
+		Frequency: frequency,
+		Angle:     angle,
+		RGBColor:  rbgColors[6],
+	}
+	sine[4] = effects.Sine{
+		Amplitude: amp,
+		Step:      0.0018,
+		Threshold: 0.27,
+		AmpDown:   true,
+		OffsetX:   50,
+		OffsetY:   0,
+		Frequency: frequency,
+		Angle:     angle,
+		RGBColor:  rbgColors[7],
+	}
+	sine[5] = effects.Sine{
+		Amplitude: amp,
+		Step:      0.0017,
+		Threshold: 0.32,
+		AmpDown:   true,
+		OffsetX:   60,
+		OffsetY:   0,
+		Frequency: frequency,
+		Angle:     angle,
+		RGBColor:  rbgColors[3],
+	}
+
+	effects.InitStars(renderer, windowWidth, windowHeight)
+
+	for running {
+
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			}
+		}
+
+		// Clear background
+		renderer.SetDrawColor(15, 15, 23, 1)
+		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
+
+		// Stars
+		effects.UpdateStars()
+
+		// Sine waves
+		ticks := sdl.GetTicks64()
+
+		if ticks >= startTick+1000 {
+			effects.SineWave(renderer, &sine[1], windowWidth, windowHeight)
+		}
+		if ticks >= 3000+startTick {
+			effects.SineWave(renderer, &sine[0], windowWidth, windowHeight)
+		}
+		if ticks >= 4500+startTick {
+			effects.SineWave(renderer, &sine[2], windowWidth, windowHeight)
+		}
+		if ticks >= 6000+startTick {
+			effects.SineWave(renderer, &sine[3], windowWidth, windowHeight)
+		}
+		if ticks >= 7000+startTick {
+			effects.SineWave(renderer, &sine[4], windowWidth, windowHeight)
+		}
+		if ticks >= 7500+startTick {
+			effects.SineWave(renderer, &sine[5], windowWidth, windowHeight)
+		}
+
+		// Show cube
+		if ticks >= 8000+startTick {
+			effects.SpinningCube(renderer, windowWidth, windowHeight)
+		}
+
+		if sdl.GetTicks64() >= 24000+startTick {
+			running = false
+			break
+		}
+		updateScreen()
+
+	}
+}
+
+var delayTime uint64 = 1000 / FPS
+var startTime uint64 = 0
+var renderTime uint64 = 0
+var diffTime uint32 = 0
+
+// var fpscap uint64 = 0
+// var fpsticks uint64 = 0
+// var fpscount int64 = 0
+
 func updateScreen() {
-	const ticksForNextFrame uint32 = 1000 / FPS
-	lastTime := sdl.GetTicks()
-	if sdl.GetTicks()-lastTime < ticksForNextFrame {
-		sdl.Delay(1)
-		/*time.Sleep(time.Second / 1000)
-		fmt.Println("\nlastTime: ", lastTime)
-		fmt.Println("ticksForNextFrame: ", ticksForNextFrame)
-		fmt.Println("sdl.GetTicks(): ", sdl.GetTicks())
-		fmt.Println("GetTicks()-lastTime: ", sdl.GetTicks()-lastTime)
-		*/
-	}
+
+	// Time taken to render frame
+	//startTime = sdl.GetTicks64()
 	renderer.Present()
+	//renderTime = sdl.GetTicks64() - startTime
+
+	// Clear screen
+	renderer.SetDrawColor(0, 0, 0, 255)
+	renderer.Clear()
+
+	// Show FPS
+	// if fpsticks <= sdl.GetTicks64()-1000.0 {
+	// 	fmt.Println("FPS: ", fpscount)
+	// 	fpsticks = sdl.GetTicks64()
+	// 	fpscount = 0
+	// }
+	// fpscount++
 }

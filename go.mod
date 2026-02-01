@@ -1,5 +1,5 @@
 module github.com/intuitionamiga/gotro
 
-go 1.19
+go 1.25
 
-require github.com/veandco/go-sdl2 v0.4.27 // indirect
+require github.com/veandco/go-sdl2 v0.4.40
