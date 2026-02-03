@@ -1,4 +1,4 @@
-module github.com/intuitionamiga/gotro
+module github.com/johnparn/gotro
 
 go 1.25
 

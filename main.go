@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/intuitionamiga/gotro/effects"
+	"github.com/johnparn/gotro/effects"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/mix"
 	"github.com/veandco/go-sdl2/sdl"
