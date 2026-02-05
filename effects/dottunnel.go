@@ -1,9 +1,6 @@
 // Dot sphere
-// Ported from dottorus.cpp: https://github.com/johangardhage/retro-demoeffects
+// Ported from dottunnel2.cpp: https://github.com/johangardhage/retro-demoeffects
 
-// #include "lib/retro.h"
-// #include "lib/retromain.h"
-// #include "lib/retrogfx.h"
 package effects
 
 import (

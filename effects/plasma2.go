@@ -1,12 +1,6 @@
 package effects
 
-// plasma.cpp
-//
-// Author: Johan Gardhage <johan.gardhage@gmail.com>
-//
-
-// #include "lib/retro.h"
-// #include "lib/retromain.h"
+// Ported from plasma.cpp: https://github.com/johangardhage/retro-demoeffects
 
 import (
 	"math"
@@ -26,23 +20,15 @@ type Plasma2Settings struct {
 	Colors       [256]RGBColor
 }
 
-// var sine_values int32 //SINE_VALUES (RETRO_WIDTH + PLASMA_FRAMES * 2)
-
-// var sine_table []float64
 var framecounter float64
 var plasma2Settings = Plasma2Settings{}
 var frame int
 
-// #define WRAP(n, h) ((unsigned int)(n) % (h))
-
 func RunPlasma2() {
 	// Calculate frame
 	framecounter += 9
-	// fmt.Println(framecounter)
 	frame = int(math.Mod(framecounter, float64(PLASMA_FRAMES)))
 
-	// Generate plasma
-	// var y int = 0
 	for y := 0; y <= plasma2Settings.WindowHeight; y++ {
 		var yc float64 = 75 + plasma2Settings.SineTable[y+frame*2]*2 + plasma2Settings.SineTable[y*2+frame/2] + plasma2Settings.SineTable[y+frame]*2
 		// var x int = 0

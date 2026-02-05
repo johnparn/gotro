@@ -19,8 +19,6 @@ type boingballSettings struct {
 	StartTick    uint64
 }
 
-// type Option func(p boingballSettings) boingballSettings
-
 var bbSettings boingballSettings
 
 const ObjectWidth int32 = 128
@@ -61,8 +59,6 @@ func setBGColor(bgColors RGBColor) RGBColor {
 	bgColors.R = GetColor(bgColors.R)
 	bgColors.G = GetColor(bgColors.G)
 	bgColors.B = GetColor(bgColors.B)
-	// bbSettings.Renderer.SetDrawColor(bgColors.R.Value, bgColors.G.Value, bgColors.B.Value, 1)
-	// _ = bbSettings.Renderer.Clear()
 	return bgColors
 }
 

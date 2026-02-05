@@ -32,6 +32,7 @@ func main() {
 	var _ = sdl.PollEvent() //MacOS won't draw the window without this line
 
 	playMusic()
+
 	drawSceneScroll()
 
 	drawScenePlasma()
@@ -42,7 +43,7 @@ func main() {
 	drawDotTunnel()
 	drawDotSphere()
 	drawTwister()
-	// drawBoingBall(192, 102, 0)
+	drawBoingBall(192, 102, 0)
 
 	_ = renderer.Destroy()
 	_ = window.Destroy()

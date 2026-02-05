@@ -14,13 +14,7 @@ const CHAR_WIDTH int = 48
 const CHAR_HEIGHT int = 50
 
 var Map [7]string = [7]string{"abcdef", "ghijkl", "mnopqr", "stuvwx", "yz0123", "456789", "?!().,"}
-
 var ControlCharsMap []string = []string{"|", "^"}
-
-// const CHAR_WIDTH int = 32
-// const CHAR_HEIGHT int = 32
-
-// var Map [6]string = [6]string{" !\"    '()", "  ,-. 0123", "456789:;  ", " ? abcdefg", "hijklmnopq", "rstuvwxyz "}
 
 type scrollerSettingsStruct struct {
 	Renderer *sdl.Renderer // sdl renderer instance
@@ -50,10 +44,6 @@ type commandStruct struct {
 }
 
 var msg []byte = []byte("welcome!             this is a text for testing purposes only               ")
-
-// the demo is for just for trying out go as a programming language, powered by sdl for handling the graphics and sound.                                                        ")
-
-// var msgs = make([]byte, 0)
 
 // Setup scroller settings
 func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, rotateChars bool) {
@@ -96,33 +86,12 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, rot
 		os.Exit(1)
 	}
 
-	// for i := 0; i < 360; i++ {
-	// 	sin_t[i] = math.Sin(float64(i) * math.Pi / 180.0)
-	// }
-
-	// pattern := regexp.MustCompile(`\|p\d+\|`)
-	// matches := pattern.FindAllIndex(msg, -1)
-	// for _, match := range matches {
-	// 	match_substr := msg[match[0]:match[1]]
-
-	// 	clean_substr := bytes.ReplaceAll(match_substr, []byte("|"), []byte(""))
-
-	// 	if string(clean_substr[0:1]) == "p" {
-	// 		scrollControl = append(scrollControl, commandStruct{command: "pause", value: len(clean_substr[1:len(clean_substr)]), start: match[0], end: match[1], len: len(match_substr)})
-	// 		fmt.Println(scrollControl)
-	// 	}
-	// }
-	// msg = pattern.ReplaceAll(msg, []byte(""))
-
-	// scrollerSettings.startTime = sdl.GetTicks64() + 2400
-	// scrollerSettings.endTime = scrollerSettings.startTime + 5000
-
 	scrollerSettings.CharMap = cMap
 	scrollerSettings.WindowWidth = windowWidth
 	scrollerSettings.WindowHeight = windowHeight
 	scrollerSettings.D = 1
 	scrollerSettings.CharOffset = 0
-	// scrollerSettings.Sin = sin_t
+
 	scrollerSettings.CharWidth = CHAR_WIDTH
 	scrollerSettings.CharHeight = CHAR_HEIGHT
 	scrollerSettings.CharGrow = false
@@ -203,45 +172,9 @@ func unpauseScroller() {
 func RunScroller() {
 	var dest, src sdl.Rect
 
-	// var currTime uint64 = sdl.GetTicks64()
-
-	// if doPause == true && currTime >= pauseEndTime {
-	// 	unpauseScroller()
-	// }
-
-	// // // fmt.Println("Time", scrollerSettings.startTime, scrollerSettings.endTime, currTime)
-	// if doPause == false && scrollerSettings.CharOffset == (scrollerSettings.WindowWidth/2)-(scrollerSettings.CharOffset/2)-CHAR_WIDTH {
-	// 	fmt.Println(currTime, pauseEndTime, scrollerSettings.CharOffset)
-	// 	pauseScroller(currTime, 2000)
-	// }
-
 	for i := range msg {
 
-		// if scrollerSettings.CharOffset == i*CHAR_WIDTH && i == 10 {
-		// 	fmt.Println("Command position", scrollerSettings.CharOffset/CHAR_WIDTH)
-		// 	doPause = true
-		// }
-		// ctrlChar := getControlCharIndex(string(msg[i]))
-		// if ctrlChar >= 0 {
-		// 	pauseScroller += sdl.GetTicks64() + 2000
-		// 	fmt.Println("CHAR", string(msg[i]), ctrlChar)
-		// }
 		v := getChar(string(msg[i]))
-
-		// if string(msg[i]) == "|" {
-		// 	n := strings.Index(msg[i:], "|")
-
-		// }
-
-		// for _, v := range scrollControl {
-		// 	if v.start >= scrollerSettings.CharOffset/CHAR_WIDTH {
-		// 		if v.command == "pause" {
-		// 			scrollerSettings.D = 0
-		// 			// doPause = true
-		// 			pauseUntil = sdl.GetTicks64() + 3000
-		// 		}
-		// 	}
-		// }
 
 		// In case there is no matching character then add space
 		if v.X < 0 && v.Y < 0 {
@@ -262,12 +195,8 @@ func RunScroller() {
 		// Size of destination rect
 		dest.X = int32(scrollerSettings.CharOffset)
 		dest.Y = int32(scrollerSettings.WindowHeight)/2 - int32(CHAR_HEIGHT/2)
-		// dest.Y = int32(math.Sin(float64((math.Pi/60)/3))*0.0*(float64(scrollerSettings.WindowHeight/2)*0.5) + float64(scrollerSettings.WindowHeight/2))
 		dest.W = int32(scrollerSettings.CharWidth)
 		dest.H = int32(scrollerSettings.CharHeight)
-
-		// SDL_RendererFlip flip = SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL;
-		// SDL_RenderCopyEx(renderer, texture, &srcrect, &dstrect, angle, &center, flip);
 
 		// If text is to be "rotated", ie shrink/grow and flipped vertically or not
 		if scrollerSettings.RotateChars && scrollerSettings.Flipped {
@@ -291,11 +220,7 @@ func RunScroller() {
 
 	// At end of message reset
 	if scrollerSettings.D > (len(msg)*CHAR_WIDTH + scrollerSettings.WindowWidth) {
-		// var initTime = sdl.GetTicks64()
 		scrollerSettings.D = 0
-		// Change start anc end time according to new ticks
-		// scrollerSettings.startTime += initTime
-		// scrollerSettings.endTime += initTime
 	}
 
 	// Offset for message

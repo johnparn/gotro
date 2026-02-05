@@ -39,8 +39,6 @@ func ResetStars(renderer *sdl.Renderer, windowWidth, windowHeight int) {
 }
 
 func InitStars(renderer *sdl.Renderer, windowWidth, windowHeight int) {
-	// rendestarSettingSetDrawColor(15, 15, 23, 1)
-	// renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
 	starSettings = StarsSettings{}
 	starSettings.Renderer = renderer
 	starSettings.WindowWidth = windowWidth
@@ -75,9 +73,6 @@ func UpdateStars() {
 			var c sdl.Color = getStarColor(stars[i].speed)
 			starSettings.Renderer.SetDrawColor(c.R, c.G, c.B, 1)
 			starSettings.Renderer.DrawPoint(rect.X, rect.Y)
-			// if stars[i].speed < 1 {
-			// 	fmt.Println("Speed", stars[i].speed)
-			// }
 			stars[i].X -= stars[i].speed
 
 			if stars[i].X < 0 {
@@ -117,74 +112,3 @@ func getStarColor(speed int) sdl.Color {
 	}
 	return color
 }
-
-// var initialized bool = false
-
-// func InitStars(renderer *sdl.Renderer, windowWidth, windowHeight int) {
-// 	if !initialized {
-// 		ResetStars(renderer, windowWidth, windowHeight)
-// 	}
-// 	DoStars(renderer, windowWidth, windowHeight)
-// 	UpdateStars(renderer, windowWidth, windowHeight)
-// }
-
-// func Stars(renderer *sdl.Renderer, windowWidth, windowHeight int) {
-
-// 	var running bool = true
-
-// 	var background sdl.Rect
-// 	background.X = 0
-// 	background.Y = 0
-// 	background.W = int32(windowWidth)
-// 	background.H = int32(windowHeight)
-// 	renderer.SetDrawColor(0, 0, 0, 1)
-// 	renderer.FillRect(&background)
-
-// 	ResetStars(renderer, windowWidth, windowHeight)
-
-// 	// var event sdl.Event
-// 	for running {
-// 		// event = sdl.PollEvent()
-// 		// if event.GetType() == uint32(sdl.QUIT) {
-// 		// 	running = false
-// 		// }
-
-// 		// if event.GetType() == uint32(sdl.KEYDOWN) {
-// 		// 	running = false
-// 		// 	break
-// 		// }
-
-// 		DoStars(renderer, windowWidth, windowHeight)
-// 		UpdateStars(renderer, windowWidth, windowHeight)
-
-// 		renderer.Present()
-
-// 		var ticks uint64 = sdl.GetTicks64()
-// 		fmt.Printf("Tick %d\n", ticks)
-// 		if ticks >= uint64(3*1000) {
-// 			fmt.Println("Switching view")
-// 			break
-// 		}
-// 		sdl.Delay(1)
-
-// 		// myTexture.Update(nil, f(unsafe.Pointer(&mySurface.Pixels()[0])), int(mySurface.Pitch))
-
-// 		// func setPixel(int x, int y, Uint8 r, Uint8 g, Uint8 b) {
-// 		// 	SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE);
-// 		// 	SDL_RenderDrawPoint(renderer, x, y);
-// 		// }
-// 		// 	SDL_UpdateTexture(myTexture, NULL, mySurface["pixels"], mySurface["pitch"])
-// 		// 	SDL_RenderCopy(myRenderer, myTexture, NULL, NULL)
-// 		// 	SDL_RenderPresent(myRenderer)
-// 		// 	SDL_Delay(1)
-// 		// 	delay(Limit)
-// 		// 	Limit = SDL_GetTicks() + 16
-// 	}
-
-// 	// SDL_DestroyWindow(myWindow)
-// 	// SDL_DestroyRenderer(myRenderer)
-// 	// myWindow = NULL
-// 	// myRenderer = NULL
-// 	// SDL_Quit()
-// 	// return 0
-// }

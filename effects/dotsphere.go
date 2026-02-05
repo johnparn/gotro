@@ -17,9 +17,6 @@ const ZMAX float64 = 160
 
 // Count number of points
 var NumPoints int32 = 0
-
-// var WindowWidth int32
-// var WindowHeight int32
 var Renderer *sdl.Renderer
 var palette [256]RGBColor
 
@@ -95,9 +92,6 @@ func RenderDotSphere(deltatime float64) {
 		if x >= 0 && x <= float64(sphereSettings.WindowWidth) && y >= 0 && y <= float64(sphereSettings.WindowHeight) && z > ZMIN && z < ZMAX {
 			color := uint8(math.Floor((z + math.Abs(ZMIN)) * (64.0 / (math.Abs(ZMIN) + ZMAX))))
 			PutPixel(sphereSettings.Renderer, int32(x), int32(y), palette[color].R.Value, palette[color].G.Value, palette[color].B.Value, palette[color].A.Value)
-			// Renderer.SetDrawColor(palette[color].R.Value, palette[color].G.Value, palette[color].B.Value, palette[color].A.Value)
-			// Renderer.DrawPoint(int32(x), int32(y))
-			// gfx.FilledCircleRGBA(Renderer, int32(x), int32(y), 2, palette[color].R.Value, palette[color].G.Value, palette[color].B.Value, palette[color].A.Value)
 		}
 
 	}

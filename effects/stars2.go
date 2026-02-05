@@ -1,25 +1,13 @@
 package effects
 
+// Ported from stars3.cpp: https://github.com/johangardhage/retro-demoeffects
+
 import (
 	"math"
 	"math/rand"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
-
-//
-// stars.cpp
-//
-// Author: Johan Gardhage <johan.gardhage@gmail.com>
-//
-// #include "lib/retro.h"
-// #include "lib/retromain.h"
-// #include "lib/retrogfx.h"
-
-// #define NUM_STARS 1000
-// #define SPEED 2
-// #define ZMIN (-250)
-// #define ZMAX 250
 
 const N_STARS int = 1000
 
