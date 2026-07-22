@@ -33,6 +33,7 @@ func main() {
 
 	playMusic()
 
+	drawRotoTunnel()
 	drawSceneScroll()
 
 	drawScenePlasma()
@@ -149,6 +150,26 @@ func playMusic() {
 		os.Exit(1)
 	} else {
 		_ = music.Play(1)
+	}
+}
+
+func drawRotoTunnel() {
+
+	var running bool = true
+
+	effects.InitializeRotoTunnel(renderer, windowWidth, windowHeight)
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
+			}
+		}
+		effects.RunRotoTunnel()
+		updateScreen()
 	}
 }
 
