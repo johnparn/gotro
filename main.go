@@ -33,10 +33,10 @@ func main() {
 
 	playMusic()
 	drawScenePlasma()
-	drawRotoTunnel("flowers.bmp")
+	// drawRotoTunnel("flowers.bmp")
 	drawRotoTunnel("checkered.bmp")
-	drawRotoTunnel("hexagon.bmp")
-	drawRotoTunnel("pattern.bmp")
+	// drawRotoTunnel("hexagon.bmp")
+	// drawRotoTunnel("pattern.bmp")
 
 	drawSceneScroll()
 
