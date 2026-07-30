@@ -20,6 +20,7 @@ type PlasmaSettings struct {
 	Plasma       [][]uint8
 	Palette      [256]sdl.Color
 	Renderer     *sdl.Renderer
+	Points       [256][]sdl.Point
 }
 
 var plasmaSettings = PlasmaSettings{}
@@ -65,16 +66,38 @@ func InitPlasma(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
 		}
 	}
 	plasmaSettings.Plasma = plasmaEffect
+
+	for i := range plasmaSettings.Points {
+		plasmaSettings.Points[i] = make([]sdl.Point, 0, (windowWidth*windowHeight)/256+1)
+	}
 }
 
 func RunPlasma() {
 
 	paletteShift := int(sdl.GetTicks64() / 8)
-	//draw every pixel, with the shifted palette color
-	for y := 0; y < plasmaSettings.WindowHeight; y++ {
-		for x := 0; x < plasmaSettings.WindowWidth; x++ {
-			color := plasmaSettings.Palette[(int(plasmaSettings.Plasma[x][y])+paletteShift)%256]
-			PutPixel(plasmaSettings.Renderer, int32(x), int32(y), color.R, color.G, color.B, color.A)
+	width := plasmaSettings.WindowWidth
+	height := plasmaSettings.WindowHeight
+
+	for i := range plasmaSettings.Points {
+		plasmaSettings.Points[i] = plasmaSettings.Points[i][:0]
+	}
+
+	// Group pixels by palette color so the renderer can draw them in batches.
+	for x := 0; x < width; x++ {
+		row := plasmaSettings.Plasma[x]
+		for y := 0; y < height; y++ {
+			colorIndex := (int(row[y]) + paletteShift) % 256
+			plasmaSettings.Points[colorIndex] = append(plasmaSettings.Points[colorIndex], sdl.Point{X: int32(x), Y: int32(y)})
 		}
+	}
+
+	for colorIndex, points := range plasmaSettings.Points {
+		if len(points) == 0 {
+			continue
+		}
+
+		color := plasmaSettings.Palette[colorIndex]
+		plasmaSettings.Renderer.SetDrawColor(color.R, color.G, color.B, color.A)
+		_ = plasmaSettings.Renderer.DrawPoints(points)
 	}
 }
