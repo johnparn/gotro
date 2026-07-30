@@ -32,11 +32,14 @@ func main() {
 	var _ = sdl.PollEvent() //MacOS won't draw the window without this line
 
 	playMusic()
+	drawScenePlasma()
+	drawRotoTunnel("flowers.bmp")
+	drawRotoTunnel("checkered.bmp")
+	drawRotoTunnel("hexagon.bmp")
+	drawRotoTunnel("pattern.bmp")
 
-	drawRotoTunnel()
 	drawSceneScroll()
 
-	drawScenePlasma()
 	drawStars2()
 	drawScenePlasma2()
 
@@ -153,11 +156,11 @@ func playMusic() {
 	}
 }
 
-func drawRotoTunnel() {
+func drawRotoTunnel(imageName string) {
 
 	var running bool = true
 
-	effects.InitializeRotoTunnel(renderer, windowWidth, windowHeight)
+	effects.InitializeRotoTunnel(renderer, windowWidth, windowHeight, imageName)
 	for running {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -224,6 +227,8 @@ func drawTwister() {
 			switch event.GetType() {
 			case sdl.KEYUP:
 				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
 			}
 		}
 
@@ -245,6 +250,8 @@ func drawBoingBall(R, G, B uint8) {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.GetType() {
 			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
 				running = false
 			}
 		}
@@ -306,9 +313,13 @@ func drawSceneScroll() {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.GetType() {
+
 			case sdl.KEYUP:
 				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
 			}
+
 		}
 		// renderer.Clear()
 		renderer.SetDrawColor(15, 15, 23, 1)
@@ -341,6 +352,8 @@ func drawStars2() {
 			switch event.GetType() {
 			case sdl.KEYUP:
 				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
 			}
 		}
 
@@ -361,6 +374,8 @@ func drawScenePlasma2() {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.GetType() {
 			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
 				running = false
 			}
 		}
@@ -388,6 +403,8 @@ func drawScenePlasma() {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.GetType() {
 			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
 				running = false
 			}
 		}
@@ -546,6 +563,8 @@ func drawSceneSinus(startTick uint64) {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.GetType() {
 			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
 				running = false
 			}
 		}

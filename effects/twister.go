@@ -43,17 +43,23 @@ func convCoord(x int32, y int32) int32 {
 }
 
 func blend(color1 uint32, color2 uint32, alpha uint32) uint32 {
-	rb := color1 & 0xff00ff00
-	b := color1 & 0x0000ff00
-	g := color1 & 0x00ff0000
+	invAlpha := 255 - alpha
 
-	rb += ((color2 & 0xff00ff) - rb) * alpha >> 24
-	b += ((color2 & 0x00ff00) - b) * alpha >> 24
-	g += ((color2 & 0xff00ff) - g) * alpha >> 24
+	// New color stays colored; existing buffer is treated as a grayscale shadow.
+	nr := uint32(color1 & 0x000000ff)
+	ng := uint32((color1 & 0x0000ff00) >> 8)
+	nb := uint32((color1 & 0x00ff0000) >> 16)
 
-	//return rb | g | b
+	r := uint32(color2 & 0x000000ff)
+	g := uint32((color2 & 0x0000ff00) >> 8)
+	b := uint32((color2 & 0x00ff0000) >> 16)
+	gray := (r + g + b) / 1000
 
-	return (rb & 0xff00ff) | (g & 0xff00ff) | (b & 0x00ff00)
+	outR := (nr*alpha + gray*invAlpha + 127) / 255
+	outG := (ng*alpha + gray*invAlpha + 127) / 255
+	outB := (nb*alpha + gray*invAlpha + 127) / 255
+
+	return outR | (outG << 8) | (outB << 16) | 0xff000000
 }
 
 func InitTwister(sdl_renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
@@ -92,10 +98,10 @@ func RunTwister() {
 		Y2 := ((math.Sin(p+math.Pi) * TWISTER_SCALE) + twisterSettings.Offset)
 		Y3 := ((math.Sin(p+TWISTER_PI_2*3) * TWISTER_SCALE) + twisterSettings.Offset)
 
-		vline(&colorBuffer, x, Y3, Y0, 0x00ffff00)
+		vline(&colorBuffer, x, Y3, Y0, 0x000000ff)
 		vline(&colorBuffer, x, Y2, Y3, 0xffff0000)
 		vline(&colorBuffer, x, Y1, Y2, 0xff00ff00)
-		vline(&colorBuffer, x, Y0, Y1, 0xff000000)
+		vline(&colorBuffer, x, Y0, Y1, 0x0000ffff)
 
 		p += 0.005 * math.Sin(deltaTime/divider) * 3
 	}
