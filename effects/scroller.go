@@ -2,6 +2,7 @@ package effects
 
 import (
 	"fmt"
+	"math"
 	"os"
 
 	//"slices"
@@ -31,35 +32,23 @@ type scrollerSettingsStruct struct {
 	CharGrow    bool // If char is growing or not
 	Flipped     bool // Whether scroll message is flipped vertically or not
 	RotateChars bool // Rotate chars or not
+	Message     []byte
 }
 
 var scrollerSettings = scrollerSettingsStruct{}
 
-type commandStruct struct {
-	start   int
-	end     int
-	len     int
-	command string
-	value   int
-}
-
-var msg []byte = []byte("welcome!             this is a text for testing purposes only               ")
-
 // Setup scroller settings
-func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, rotateChars bool) {
-
-	// msgs = append([]byte("welcome!               "))
-	// msgs = append([]byte("this is a text for testing purposes only               "))
-	// msgs = append([]byte("the demo is for just for trying out go as a programming language, powered by sdl for handling the graphics and sound.                                                        "))
+func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg []byte, rotateChars bool) {
 
 	scrollerSettings.Renderer = renderer
 	scrollerSettings.RotateChars = rotateChars
+	scrollerSettings.Message = msg
 
-	_, errTexture := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, int32(windowWidth), int32(windowHeight))
-	if errTexture != nil {
-		fmt.Println("Could not create texture")
-		os.Exit(1)
-	}
+	// _, errTexture := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888, sdl.TEXTUREACCESS_STREAMING, int32(windowWidth), int32(windowHeight))
+	// if errTexture != nil {
+	// 	fmt.Println("Could not create texture")
+	// 	os.Exit(1)
+	// }
 
 	//load image into surface
 	tmpImg, errTmpImg := img.Load("260.bmp")
@@ -91,11 +80,15 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, rot
 	scrollerSettings.WindowHeight = windowHeight
 	scrollerSettings.D = 1
 	scrollerSettings.CharOffset = 0
-
+	// scrollerSettings.Sin = sin_t
 	scrollerSettings.CharWidth = CHAR_WIDTH
 	scrollerSettings.CharHeight = CHAR_HEIGHT
 	scrollerSettings.CharGrow = false
 	scrollerSettings.Flipped = false
+
+	doPause = false
+	pauseEndTime = 0
+	nextPause = 0
 }
 
 // func parseText(text string)
@@ -130,51 +123,48 @@ func getChar(c string) Vector3d {
 	return pos
 }
 
-func getControlCharIndex(character string) int {
-	var charIndex int = -1
-	for i := 0; i < len(ControlCharsMap)-1; i++ {
-		if character == string(ControlCharsMap[i]) {
-			charIndex = i
-			break
-		}
-	}
-	return charIndex
-}
-
 var doPause bool = false
 var pauseEndTime uint64
+var pauseSchedule []ScrollerPause
+var nextPause int
 
-func pauseScroller(currTime uint64, duration uint64) {
-	fmt.Println("Pause", currTime, duration)
+// ScrollerPause describes a pause relative to the message scroll offset.
+type ScrollerPause struct {
+	Offset   int
+	Duration uint64
+}
+
+// SetScrollerPauses configures one-shot pauses in ascending offset order.
+func SetScrollerPauses(pauses []ScrollerPause) {
+	pauseSchedule = append([]ScrollerPause(nil), pauses...)
+	nextPause = 0
+}
+
+// PauseScroller pauses movement for the specified number of seconds.
+func PauseScroller(seconds uint64) {
 	doPause = true
-	pauseEndTime = currTime + duration
+	pauseEndTime = sdl.GetTicks64() + seconds*1000
 }
 
 func unpauseScroller() {
 	doPause = false
 }
 
-// Sinewave
-// var amp float64 = 0.0
-// var frequency float64 = (math.Pi / FPS)
-// var angle float64 = math.Pi
-// var running bool = true
-// sine.Angle += sine.Frequency / 2
-
-// var angle := sine.Angle
-// for i = 0; i < int32(windowWidth); i++ {
-// 	y := math.Sin(angle)*sine.Amplitude*(float64(windowHeight/2)*0.5) + float64(sine.OffsetX) + float64(windowHeight/2)
-// 	renderer.SetDrawColor(rColor.Value, gColor.Value, bColor.Value, alpha.Value)
-// 	renderer.DrawPoint(i, int32(y))
-// 	angle -= (sine.Frequency / 3)
-// }
-
 func RunScroller() {
 	var dest, src sdl.Rect
 
-	for i := range msg {
+	currTime := sdl.GetTicks64()
+	if doPause && currTime >= pauseEndTime {
+		unpauseScroller()
+	}
+	if !doPause && nextPause < len(pauseSchedule) && scrollerSettings.D >= pauseSchedule[nextPause].Offset {
+		PauseScroller(pauseSchedule[nextPause].Duration)
+		nextPause++
+	}
 
-		v := getChar(string(msg[i]))
+	for i := range scrollerSettings.Message {
+
+		v := getChar(string(scrollerSettings.Message[i]))
 
 		// In case there is no matching character then add space
 		if v.X < 0 && v.Y < 0 {
@@ -182,7 +172,7 @@ func RunScroller() {
 			continue
 		}
 		// Add space if it is a space
-		if string(msg[i]) == " " {
+		if string(scrollerSettings.Message[i]) == " " {
 			scrollerSettings.CharOffset += CHAR_WIDTH
 			continue
 		}
@@ -194,9 +184,13 @@ func RunScroller() {
 
 		// Size of destination rect
 		dest.X = int32(scrollerSettings.CharOffset)
-		dest.Y = int32(scrollerSettings.WindowHeight)/2 - int32(CHAR_HEIGHT/2)
+		dest.Y = int32(scrollerSettings.WindowHeight)/2 - int32(CHAR_HEIGHT/2) + int32(math.Sin(float64(sdl.GetTicks64())))
+		// dest.Y = int32(math.Sin(float64((math.Pi/60)/3))*0.0*(float64(scrollerSettings.WindowHeight/2)*0.5) + float64(scrollerSettings.WindowHeight/2))
 		dest.W = int32(scrollerSettings.CharWidth)
 		dest.H = int32(scrollerSettings.CharHeight)
+
+		// SDL_RendererFlip flip = SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL;
+		// SDL_RenderCopyEx(renderer, texture, &srcrect, &dstrect, angle, &center, flip);
 
 		// If text is to be "rotated", ie shrink/grow and flipped vertically or not
 		if scrollerSettings.RotateChars && scrollerSettings.Flipped {
@@ -219,8 +213,10 @@ func RunScroller() {
 	}
 
 	// At end of message reset
-	if scrollerSettings.D > (len(msg)*CHAR_WIDTH + scrollerSettings.WindowWidth) {
+	if scrollerSettings.D > (len(scrollerSettings.Message)*CHAR_WIDTH + scrollerSettings.WindowWidth) {
+		// var initTime = sdl.GetTicks64()
 		scrollerSettings.D = 0
+		nextPause = 0
 	}
 
 	// Offset for message

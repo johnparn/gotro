@@ -59,8 +59,8 @@ func RunRotoTunnel() {
 
 	// Match the original effect’s motion more closely with configurable drift and camera sway.
 	sx := float64(rotoTunnelSettings.imageWidth) * rotoTunnelSettings.tunnelSpeed * rotoTunnelSettings.frame
-	// sy := float64(rotoTunnelSettings.imageHeight) * 0.01 * rotoTunnelSettings.frame // Rotating
-	sy := float64(rotoTunnelSettings.imageHeight) * 0.01 * delta // Slow drift based on delta time
+	sy := float64(rotoTunnelSettings.imageHeight) * 0.0045 * rotoTunnelSettings.frame // Rotating
+	// sy := float64(rotoTunnelSettings.imageHeight) * 0.01 * delta // Slow drift based on delta time
 
 	cameraPhase := rotoTunnelSettings.frame * rotoTunnelSettings.cameraSpeed
 	rotoTunnelSettings.dx = float64(rotoTunnelSettings.WindowWidth/2) + float64(rotoTunnelSettings.WindowWidth/4)*math.Cos(cameraPhase)
@@ -114,10 +114,13 @@ func RunRotoTunnel() {
 	}
 }
 
-func InitializeRotoTunnel(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
+func InitializeRotoTunnel(renderer *sdl.Renderer, windowWidth int, windowHeight int, imageName string) {
 	rotoTunnelSettings.Renderer = renderer
 	rotoTunnelSettings.WindowWidth = windowWidth
 	rotoTunnelSettings.WindowHeight = windowHeight
+	if imageName != "" {
+		rotoTunnelSettings.imageName = imageName
+	}
 	rotoTunnelSettings.angleTable = Make2D[int](rotoTunnelSettings.WindowWidth*2, rotoTunnelSettings.WindowHeight*2)
 	rotoTunnelSettings.distanceTable = Make2D[int](rotoTunnelSettings.WindowWidth*2, rotoTunnelSettings.WindowHeight*2)
 

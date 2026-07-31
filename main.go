@@ -32,13 +32,12 @@ func main() {
 	var _ = sdl.PollEvent() //MacOS won't draw the window without this line
 
 	playMusic()
+	drawSceneScroll()
 	drawScenePlasma()
 	// drawRotoTunnel("flowers.bmp")
 	drawRotoTunnel("checkered.bmp")
 	// drawRotoTunnel("hexagon.bmp")
 	// drawRotoTunnel("pattern.bmp")
-
-	drawSceneScroll()
 
 	drawStars2()
 	drawScenePlasma2()
@@ -262,8 +261,16 @@ func drawBoingBall(R, G, B uint8) {
 
 func drawSceneScroll() {
 
-	effects.InitScroller(renderer, windowWidth, windowHeight, true)
+	var msg []byte = []byte("welcome!             this is a text for testing purposes only               ")
+
+	effects.InitScroller(renderer, windowWidth, windowHeight, msg, true)
 	effects.InitializeStars2(renderer, windowWidth, windowHeight)
+
+	// centerOffset := windowWidth/2 + 10*effects.CHAR_WIDTH
+
+	effects.SetScrollerPauses([]effects.ScrollerPause{
+		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3},
+	})
 
 	// scrollSettings2 := rotateScroller.InitScroller(renderer, windowWidth, windowHeight, false)
 	var running bool = true
