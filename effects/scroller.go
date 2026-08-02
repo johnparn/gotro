@@ -27,15 +27,58 @@ type scrollerSettingsStruct struct {
 	D            int          // Scroll speed, ie Pixels to move scroll
 	CharOffset   int
 	// Sin          [360]float64
-	CharHeight  int  // Height of inidividual char on sprite map
-	CharWidth   int  // Width of inidividual char on sprite map
-	CharGrow    bool // If char is growing or not
-	Flipped     bool // Whether scroll message is flipped vertically or not
-	RotateChars bool // Rotate chars or not
-	Message     []byte
+	CharHeight     int  // Height of inidividual char on sprite map
+	CharWidth      int  // Width of inidividual char on sprite map
+	CharGrow       bool // If char is growing or not
+	Flipped        bool // Whether scroll message is flipped vertically or not
+	RotateChars    bool // Rotate chars or not
+	Message        []byte
+	WaveEnabled    bool
+	WaveMode       string
+	WaveAmplitude  int
+	WaveFrequency  float64
+	WavePhase      float64
+	WaveBaseOffset int
+	WaveStartTime  uint64
+	WaveSpeed      float64
 }
 
 var scrollerSettings = scrollerSettingsStruct{}
+
+func calculateScrollerWaveY(xPos int, baseY int, currentTime uint64, settings scrollerSettingsStruct) int {
+	if !settings.WaveEnabled {
+		return baseY
+	}
+
+	elapsed := float64(currentTime-settings.WaveStartTime) * settings.WaveSpeed
+	phase := settings.WavePhase + elapsed
+
+	var wave float64
+	switch settings.WaveMode {
+	case "cosine":
+		wave = math.Cos(float64(xPos)*settings.WaveFrequency + phase)
+	default:
+		wave = math.Sin(float64(xPos)*settings.WaveFrequency + phase)
+	}
+
+	return int(math.Round(float64(baseY+settings.WaveBaseOffset) + wave*float64(settings.WaveAmplitude)))
+}
+
+// SetScrollerWaveConfig enables or disables wave-based vertical movement for each character.
+func SetScrollerWaveConfig(enabled bool, mode string, amplitude int, frequency float64, phase float64, baseOffset int) {
+	if mode != "sine" && mode != "cosine" {
+		mode = "sine"
+	}
+
+	scrollerSettings.WaveEnabled = enabled
+	scrollerSettings.WaveMode = mode
+	scrollerSettings.WaveAmplitude = amplitude
+	scrollerSettings.WaveFrequency = frequency
+	scrollerSettings.WavePhase = phase
+	scrollerSettings.WaveBaseOffset = baseOffset
+	scrollerSettings.WaveStartTime = sdl.GetTicks64()
+	scrollerSettings.WaveSpeed = 0.0075
+}
 
 // Setup scroller settings
 func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg []byte, rotateChars bool) {
@@ -85,6 +128,14 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg
 	scrollerSettings.CharHeight = CHAR_HEIGHT
 	scrollerSettings.CharGrow = false
 	scrollerSettings.Flipped = false
+	scrollerSettings.WaveEnabled = true
+	scrollerSettings.WaveMode = "sine"
+	scrollerSettings.WaveAmplitude = 64
+	scrollerSettings.WaveFrequency = 8
+	scrollerSettings.WavePhase = 0.0
+	scrollerSettings.WaveBaseOffset = 0
+	scrollerSettings.WaveStartTime = sdl.GetTicks64()
+	scrollerSettings.WaveSpeed = 0.0075
 
 	doPause = false
 	pauseEndTime = 0
@@ -184,8 +235,8 @@ func RunScroller() {
 
 		// Size of destination rect
 		dest.X = int32(scrollerSettings.CharOffset)
-		dest.Y = int32(scrollerSettings.WindowHeight)/2 - int32(CHAR_HEIGHT/2) + int32(math.Sin(float64(sdl.GetTicks64())))
-		// dest.Y = int32(math.Sin(float64((math.Pi/60)/3))*0.0*(float64(scrollerSettings.WindowHeight/2)*0.5) + float64(scrollerSettings.WindowHeight/2))
+		baseY := scrollerSettings.WindowHeight/2 - CHAR_HEIGHT/2
+		dest.Y = int32(calculateScrollerWaveY(scrollerSettings.CharOffset, baseY, currTime, scrollerSettings))
 		dest.W = int32(scrollerSettings.CharWidth)
 		dest.H = int32(scrollerSettings.CharHeight)
 
@@ -194,12 +245,10 @@ func RunScroller() {
 
 		// If text is to be "rotated", ie shrink/grow and flipped vertically or not
 		if scrollerSettings.RotateChars && scrollerSettings.Flipped {
-			dest.Y = int32(scrollerSettings.WindowHeight)/2 - int32(scrollerSettings.CharHeight/2)
 			// Flip chars vertically
 			scrollerSettings.Renderer.CopyEx(scrollerSettings.CharMap, &src, &dest, 0.0, &sdl.Point{X: int32(scrollerSettings.WindowWidth / 2), Y: int32(scrollerSettings.WindowHeight / 2)}, sdl.FLIP_VERTICAL)
 
 		} else {
-			dest.Y = int32(scrollerSettings.WindowHeight)/2 - int32(scrollerSettings.CharHeight/2)
 			scrollerSettings.Renderer.Copy(scrollerSettings.CharMap, &src, &dest)
 		}
 
