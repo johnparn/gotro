@@ -263,16 +263,14 @@ func drawSceneScroll() {
 
 	var msg []byte = []byte("welcome!             this is a text for testing purposes only               ")
 
-	effects.InitScroller(renderer, windowWidth, windowHeight, msg, true)
+	effects.InitScroller(renderer, windowWidth, windowHeight, msg, false)
+	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0)
 	effects.InitializeStars2(renderer, windowWidth, windowHeight)
 
-	// centerOffset := windowWidth/2 + 10*effects.CHAR_WIDTH
-
 	effects.SetScrollerPauses([]effects.ScrollerPause{
-		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3},
+		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true},
 	})
 
-	// scrollSettings2 := rotateScroller.InitScroller(renderer, windowWidth, windowHeight, false)
 	var running bool = true
 	var rgbColors [2]effects.RGBColor
 	// var startTick uint64 = sdl.GetTicks64()

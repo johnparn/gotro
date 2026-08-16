@@ -26,6 +26,7 @@ type scrollerSettingsStruct struct {
 	WindowHeight int          // Height of window
 	D            int          // Scroll speed, ie Pixels to move scroll
 	CharOffset   int
+	LastFrameMs  uint64
 	// Sin          [360]float64
 	CharHeight     int  // Height of inidividual char on sprite map
 	CharWidth      int  // Width of inidividual char on sprite map
@@ -44,6 +45,16 @@ type scrollerSettingsStruct struct {
 }
 
 var scrollerSettings = scrollerSettingsStruct{}
+
+const defaultScrollerPixelsPerSecond = 240.0
+
+func nextScrollerOffset(currentOffset float64, frameMilliseconds float64, paused bool) float64 {
+	if paused {
+		return currentOffset
+	}
+
+	return currentOffset + (defaultScrollerPixelsPerSecond * frameMilliseconds / 1000.0)
+}
 
 func calculateScrollerWaveY(xPos int, baseY int, currentTime uint64, settings scrollerSettingsStruct) int {
 	if !settings.WaveEnabled {
@@ -123,12 +134,13 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg
 	scrollerSettings.WindowHeight = windowHeight
 	scrollerSettings.D = 1
 	scrollerSettings.CharOffset = 0
+	scrollerSettings.LastFrameMs = uint64(sdl.GetTicks64())
 	// scrollerSettings.Sin = sin_t
 	scrollerSettings.CharWidth = CHAR_WIDTH
 	scrollerSettings.CharHeight = CHAR_HEIGHT
 	scrollerSettings.CharGrow = false
 	scrollerSettings.Flipped = false
-	scrollerSettings.WaveEnabled = true
+	scrollerSettings.WaveEnabled = false
 	scrollerSettings.WaveMode = "sine"
 	scrollerSettings.WaveAmplitude = 64
 	scrollerSettings.WaveFrequency = 8
@@ -181,8 +193,10 @@ var nextPause int
 
 // ScrollerPause describes a pause relative to the message scroll offset.
 type ScrollerPause struct {
-	Offset   int
-	Duration uint64
+	Offset      int
+	Duration    uint64
+	RotateChars bool
+	WaveEnabled bool
 }
 
 // SetScrollerPauses configures one-shot pauses in ascending offset order.
@@ -210,7 +224,18 @@ func RunScroller() {
 	}
 	if !doPause && nextPause < len(pauseSchedule) && scrollerSettings.D >= pauseSchedule[nextPause].Offset {
 		PauseScroller(pauseSchedule[nextPause].Duration)
+		scrollerSettings.RotateChars = pauseSchedule[nextPause].RotateChars
+		scrollerSettings.WaveEnabled = pauseSchedule[nextPause].WaveEnabled
 		nextPause++
+	}
+
+	frameMilliseconds := 0.0
+	if scrollerSettings.LastFrameMs != 0 {
+		frameMilliseconds = float64(currTime-scrollerSettings.LastFrameMs)
+	}
+	scrollerSettings.LastFrameMs = currTime
+	if !doPause {
+		scrollerSettings.D = int(math.Round(nextScrollerOffset(float64(scrollerSettings.D), frameMilliseconds, false)))
 	}
 
 	for i := range scrollerSettings.Message {
@@ -270,10 +295,6 @@ func RunScroller() {
 
 	// Offset for message
 	scrollerSettings.CharOffset = scrollerSettings.WindowWidth - scrollerSettings.D
-	if !doPause {
-		// Speed of scroll
-		scrollerSettings.D += 4
-	}
 
 	// Update rotate settings
 	if scrollerSettings.RotateChars {
