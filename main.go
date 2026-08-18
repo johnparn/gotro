@@ -264,11 +264,13 @@ func drawSceneScroll() {
 	var msg []byte = []byte("welcome!             this is a text for testing purposes only               ")
 
 	effects.InitScroller(renderer, windowWidth, windowHeight, msg, false)
-	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0)
+	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0, 1500, 2500)
 	effects.InitializeStars2(renderer, windowWidth, windowHeight)
 
 	effects.SetScrollerPauses([]effects.ScrollerPause{
-		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true},
+		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: true,
+		}},
 	})
 
 	var running bool = true

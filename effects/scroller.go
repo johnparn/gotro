@@ -28,20 +28,28 @@ type scrollerSettingsStruct struct {
 	CharOffset   int
 	LastFrameMs  uint64
 	// Sin          [360]float64
-	CharHeight     int  // Height of inidividual char on sprite map
-	CharWidth      int  // Width of inidividual char on sprite map
-	CharGrow       bool // If char is growing or not
-	Flipped        bool // Whether scroll message is flipped vertically or not
-	RotateChars    bool // Rotate chars or not
-	Message        []byte
-	WaveEnabled    bool
-	WaveMode       string
-	WaveAmplitude  int
-	WaveFrequency  float64
-	WavePhase      float64
-	WaveBaseOffset int
-	WaveStartTime  uint64
-	WaveSpeed      float64
+	CharHeight         int  // Height of inidividual char on sprite map
+	InitialCharHeight  int  // Initial value of CharHeight for reset
+	CharWidth          int  // Width of inidividual char on sprite map
+	CharGrow           bool // If char is growing or not
+	Flipped            bool // Whether scroll message is flipped vertically or not
+	RotateChars        bool // Rotate chars or not
+	InitialRotateChars bool // Initial value of RotateChars for reset
+	Message            []byte
+	WaveEnabled        bool
+	InitialWaveEnabled bool // Initial value of WaveEnabled for reset
+	WaveMode           string
+	WaveAmplitude      int
+	WaveFrequency      float64
+	WavePhase          float64
+	WaveBaseOffset     int
+	WaveStartTime      uint64
+	WaveSpeed          float64
+	WaveFadeInTime     uint64 // Time in milliseconds for wave to fade in
+	WaveFadeOutTime    uint64 // Time in milliseconds for wave to fade out
+	WaveFadeOutStart   uint64 // When to start fading out (0 means no fade out)
+	RotationDelay      int    // Delay between character rotations in pixels
+	RotationCycle      int    // Total pixels for a full rotation cycle
 }
 
 var scrollerSettings = scrollerSettingsStruct{}
@@ -57,7 +65,8 @@ func nextScrollerOffset(currentOffset float64, frameMilliseconds float64, paused
 }
 
 func calculateScrollerWaveY(xPos int, baseY int, currentTime uint64, settings scrollerSettingsStruct) int {
-	if !settings.WaveEnabled {
+	// Allow fade-out to complete even if wave was disabled
+	if !settings.WaveEnabled && settings.WaveFadeOutStart == 0 {
 		return baseY
 	}
 
@@ -72,11 +81,60 @@ func calculateScrollerWaveY(xPos int, baseY int, currentTime uint64, settings sc
 		wave = math.Sin(float64(xPos)*settings.WaveFrequency + phase)
 	}
 
-	return int(math.Round(float64(baseY+settings.WaveBaseOffset) + wave*float64(settings.WaveAmplitude)))
+	// Calculate fade envelope (0.0 to 1.0)
+	fadeEnvelope := 1.0
+	timeSinceStart := currentTime - settings.WaveStartTime
+
+	// Fade in (only if not fading out)
+	if settings.WaveFadeOutStart == 0 && settings.WaveFadeInTime > 0 && timeSinceStart < settings.WaveFadeInTime {
+		fadeEnvelope = float64(timeSinceStart) / float64(settings.WaveFadeInTime)
+	}
+
+	// Fade out
+	if settings.WaveFadeOutStart > 0 && currentTime >= settings.WaveFadeOutStart {
+		timeSinceFadeOut := currentTime - settings.WaveFadeOutStart
+		if timeSinceFadeOut < settings.WaveFadeOutTime {
+			fadeEnvelope = 1.0 - (float64(timeSinceFadeOut) / float64(settings.WaveFadeOutTime))
+		} else {
+			// Fade out complete
+			fadeEnvelope = 0.0
+		}
+	}
+
+	return int(math.Round(float64(baseY+settings.WaveBaseOffset) + wave*fadeEnvelope*float64(settings.WaveAmplitude)))
+}
+
+// calculateCharHeight calculates the height for a character based on its position in the scroll
+func calculateCharHeight(charPos int, settings scrollerSettingsStruct) int {
+	if !settings.RotateChars {
+		return settings.CharHeight
+	}
+
+	// Calculate the delay offset for this character based on its position
+	// Each character starts rotating after the previous one by RotationDelay pixels
+	adjustedPos := charPos - settings.RotationDelay
+	if adjustedPos < 0 {
+		adjustedPos = 0
+	}
+
+	// Position within the rotation cycle (0 to RotationCycle)
+	posInCycle := adjustedPos % settings.RotationCycle
+
+	// First half: grow from 1 to CHAR_HEIGHT
+	// Second half: shrink from CHAR_HEIGHT to 1
+	if posInCycle < settings.RotationCycle/2 {
+		// Growing phase
+		return 1 + posInCycle
+	} else {
+		// Shrinking phase
+		return CHAR_HEIGHT - (posInCycle - settings.RotationCycle/2)
+	}
 }
 
 // SetScrollerWaveConfig enables or disables wave-based vertical movement for each character.
-func SetScrollerWaveConfig(enabled bool, mode string, amplitude int, frequency float64, phase float64, baseOffset int) {
+// fadeInMs: time in milliseconds for wave amplitude to fade in (0 for instant)
+// fadeOutMs: time in milliseconds for wave amplitude to fade out (0 for no fade out)
+func SetScrollerWaveConfig(enabled bool, mode string, amplitude int, frequency float64, phase float64, baseOffset int, fadeInMs uint64, fadeOutMs uint64) {
 	if mode != "sine" && mode != "cosine" {
 		mode = "sine"
 	}
@@ -89,6 +147,14 @@ func SetScrollerWaveConfig(enabled bool, mode string, amplitude int, frequency f
 	scrollerSettings.WaveBaseOffset = baseOffset
 	scrollerSettings.WaveStartTime = sdl.GetTicks64()
 	scrollerSettings.WaveSpeed = 0.0075
+	scrollerSettings.WaveFadeInTime = fadeInMs
+	scrollerSettings.WaveFadeOutTime = fadeOutMs
+	scrollerSettings.WaveFadeOutStart = 0 // Only set when you want to trigger fade out
+}
+
+// StartScrollerWaveFadeOut triggers the wave to start fading out
+func StartScrollerWaveFadeOut() {
+	scrollerSettings.WaveFadeOutStart = sdl.GetTicks64()
 }
 
 // Setup scroller settings
@@ -137,10 +203,14 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg
 	scrollerSettings.LastFrameMs = uint64(sdl.GetTicks64())
 	// scrollerSettings.Sin = sin_t
 	scrollerSettings.CharWidth = CHAR_WIDTH
+	scrollerSettings.InitialCharHeight = CHAR_HEIGHT
 	scrollerSettings.CharHeight = CHAR_HEIGHT
 	scrollerSettings.CharGrow = false
 	scrollerSettings.Flipped = false
 	scrollerSettings.WaveEnabled = false
+	scrollerSettings.InitialWaveEnabled = false
+	scrollerSettings.RotateChars = rotateChars
+	scrollerSettings.InitialRotateChars = rotateChars
 	scrollerSettings.WaveMode = "sine"
 	scrollerSettings.WaveAmplitude = 64
 	scrollerSettings.WaveFrequency = 8
@@ -148,6 +218,11 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg
 	scrollerSettings.WaveBaseOffset = 0
 	scrollerSettings.WaveStartTime = sdl.GetTicks64()
 	scrollerSettings.WaveSpeed = 0.0075
+	scrollerSettings.WaveFadeInTime = 0
+	scrollerSettings.WaveFadeOutTime = 0
+	scrollerSettings.WaveFadeOutStart = 0
+	scrollerSettings.RotationDelay = CHAR_WIDTH      // Delay between characters
+	scrollerSettings.RotationCycle = CHAR_HEIGHT * 2 // Full cycle: grow and shrink
 
 	doPause = false
 	pauseEndTime = 0
@@ -191,12 +266,19 @@ var pauseEndTime uint64
 var pauseSchedule []ScrollerPause
 var nextPause int
 
+// Unpause
+type ScrollerUnpause struct {
+	RotateChars bool
+	WaveEnabled bool
+}
+
 // ScrollerPause describes a pause relative to the message scroll offset.
 type ScrollerPause struct {
 	Offset      int
 	Duration    uint64
 	RotateChars bool
 	WaveEnabled bool
+	Unpause     ScrollerUnpause
 }
 
 // SetScrollerPauses configures one-shot pauses in ascending offset order.
@@ -221,17 +303,27 @@ func RunScroller() {
 	currTime := sdl.GetTicks64()
 	if doPause && currTime >= pauseEndTime {
 		unpauseScroller()
+		scrollerSettings.RotateChars = pauseSchedule[nextPause].Unpause.RotateChars
+		if scrollerSettings.WaveEnabled && !pauseSchedule[nextPause].Unpause.WaveEnabled {
+			// Wave is being disabled, reset fade-out time for proper fade-out
+			scrollerSettings.WaveFadeOutStart = sdl.GetTicks64()
+		}
+		scrollerSettings.WaveEnabled = pauseSchedule[nextPause].Unpause.WaveEnabled
+		nextPause++
 	}
 	if !doPause && nextPause < len(pauseSchedule) && scrollerSettings.D >= pauseSchedule[nextPause].Offset {
 		PauseScroller(pauseSchedule[nextPause].Duration)
 		scrollerSettings.RotateChars = pauseSchedule[nextPause].RotateChars
+		if pauseSchedule[nextPause].WaveEnabled && !scrollerSettings.WaveEnabled {
+			// Wave is being enabled, reset start time for proper fade-in
+			scrollerSettings.WaveStartTime = sdl.GetTicks64()
+		}
 		scrollerSettings.WaveEnabled = pauseSchedule[nextPause].WaveEnabled
-		nextPause++
 	}
 
 	frameMilliseconds := 0.0
 	if scrollerSettings.LastFrameMs != 0 {
-		frameMilliseconds = float64(currTime-scrollerSettings.LastFrameMs)
+		frameMilliseconds = float64(currTime - scrollerSettings.LastFrameMs)
 	}
 	scrollerSettings.LastFrameMs = currTime
 	if !doPause {
@@ -291,6 +383,11 @@ func RunScroller() {
 		// var initTime = sdl.GetTicks64()
 		scrollerSettings.D = 0
 		nextPause = 0
+		// Reset wave and rotation to initial values
+		scrollerSettings.WaveEnabled = scrollerSettings.InitialWaveEnabled
+		scrollerSettings.RotateChars = scrollerSettings.InitialRotateChars
+		scrollerSettings.CharHeight = scrollerSettings.InitialCharHeight
+		scrollerSettings.WaveFadeOutStart = 0 // Clear any active fade-out
 	}
 
 	// Offset for message
