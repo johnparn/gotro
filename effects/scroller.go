@@ -34,6 +34,7 @@ type scrollerSettingsStruct struct {
 	CharGrow           bool // If char is growing or not
 	Flipped            bool // Whether scroll message is flipped vertically or not
 	RotateChars        bool // Rotate chars or not
+	RotationFadingOut  bool // Whether rotation is collapsing before being disabled
 	InitialRotateChars bool // Initial value of RotateChars for reset
 	Message            []byte
 	WaveEnabled        bool
@@ -131,6 +132,59 @@ func calculateCharHeight(charPos int, settings scrollerSettingsStruct) int {
 	}
 }
 
+func setScrollerRotateChars(enabled bool) {
+	if enabled {
+		scrollerSettings.RotationFadingOut = false
+		scrollerSettings.RotateChars = true
+		return
+	}
+	if scrollerSettings.RotateChars {
+		// Keep the rotation state active until the collapse has rendered.
+		scrollerSettings.RotationFadingOut = true
+		return
+	}
+	scrollerSettings.RotateChars = enabled
+}
+
+func updateScrollerRotation(settings *scrollerSettingsStruct) {
+	if settings.RotationFadingOut {
+		if !settings.CharGrow && settings.CharHeight > 1 {
+			settings.CharHeight--
+			return
+		}
+
+		if settings.CharHeight < settings.InitialCharHeight {
+			settings.Flipped = false
+			settings.CharGrow = true
+			settings.CharHeight++
+			return
+		}
+
+		settings.Flipped = false
+		settings.RotationFadingOut = false
+		settings.RotateChars = false
+		return
+	}
+	if !settings.RotateChars {
+		return
+	}
+
+	// Char direction grow/shrink
+	if settings.CharHeight >= settings.InitialCharHeight {
+		settings.CharGrow = false
+	} else if settings.CharHeight <= 1 {
+		settings.CharGrow = true
+		settings.Flipped = !settings.Flipped
+	}
+
+	// Make char grow by changing CharHeight that is used for the destination rect
+	if settings.CharGrow {
+		settings.CharHeight++
+	} else {
+		settings.CharHeight--
+	}
+}
+
 // SetScrollerWaveConfig enables or disables wave-based vertical movement for each character.
 // fadeInMs: time in milliseconds for wave amplitude to fade in (0 for instant)
 // fadeOutMs: time in milliseconds for wave amplitude to fade out (0 for no fade out)
@@ -207,6 +261,7 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg
 	scrollerSettings.CharHeight = CHAR_HEIGHT
 	scrollerSettings.CharGrow = false
 	scrollerSettings.Flipped = false
+	scrollerSettings.RotationFadingOut = false
 	scrollerSettings.WaveEnabled = false
 	scrollerSettings.InitialWaveEnabled = false
 	scrollerSettings.RotateChars = rotateChars
@@ -303,20 +358,25 @@ func RunScroller() {
 	currTime := sdl.GetTicks64()
 	if doPause && currTime >= pauseEndTime {
 		unpauseScroller()
-		scrollerSettings.RotateChars = pauseSchedule[nextPause].Unpause.RotateChars
+		setScrollerRotateChars(pauseSchedule[nextPause].Unpause.RotateChars)
 		if scrollerSettings.WaveEnabled && !pauseSchedule[nextPause].Unpause.WaveEnabled {
 			// Wave is being disabled, reset fade-out time for proper fade-out
-			scrollerSettings.WaveFadeOutStart = sdl.GetTicks64()
+			scrollerSettings.WaveFadeOutStart = currTime
+		}
+		if pauseSchedule[nextPause].Unpause.WaveEnabled {
+			scrollerSettings.WaveFadeOutStart = 0
+			scrollerSettings.WaveStartTime = currTime
 		}
 		scrollerSettings.WaveEnabled = pauseSchedule[nextPause].Unpause.WaveEnabled
 		nextPause++
 	}
 	if !doPause && nextPause < len(pauseSchedule) && scrollerSettings.D >= pauseSchedule[nextPause].Offset {
 		PauseScroller(pauseSchedule[nextPause].Duration)
-		scrollerSettings.RotateChars = pauseSchedule[nextPause].RotateChars
+		setScrollerRotateChars(pauseSchedule[nextPause].RotateChars)
 		if pauseSchedule[nextPause].WaveEnabled && !scrollerSettings.WaveEnabled {
 			// Wave is being enabled, reset start time for proper fade-in
-			scrollerSettings.WaveStartTime = sdl.GetTicks64()
+			scrollerSettings.WaveStartTime = currTime
+			scrollerSettings.WaveFadeOutStart = 0
 		}
 		scrollerSettings.WaveEnabled = pauseSchedule[nextPause].WaveEnabled
 	}
@@ -361,7 +421,7 @@ func RunScroller() {
 		// SDL_RenderCopyEx(renderer, texture, &srcrect, &dstrect, angle, &center, flip);
 
 		// If text is to be "rotated", ie shrink/grow and flipped vertically or not
-		if scrollerSettings.RotateChars && scrollerSettings.Flipped {
+		if (scrollerSettings.RotateChars || scrollerSettings.RotationFadingOut) && scrollerSettings.Flipped {
 			// Flip chars vertically
 			scrollerSettings.Renderer.CopyEx(scrollerSettings.CharMap, &src, &dest, 0.0, &sdl.Point{X: int32(scrollerSettings.WindowWidth / 2), Y: int32(scrollerSettings.WindowHeight / 2)}, sdl.FLIP_VERTICAL)
 
@@ -385,29 +445,16 @@ func RunScroller() {
 		nextPause = 0
 		// Reset wave and rotation to initial values
 		scrollerSettings.WaveEnabled = scrollerSettings.InitialWaveEnabled
-		scrollerSettings.RotateChars = scrollerSettings.InitialRotateChars
+		setScrollerRotateChars(scrollerSettings.InitialRotateChars)
 		scrollerSettings.CharHeight = scrollerSettings.InitialCharHeight
+		scrollerSettings.Flipped = false
+		scrollerSettings.RotationFadingOut = false
 		scrollerSettings.WaveFadeOutStart = 0 // Clear any active fade-out
 	}
 
 	// Offset for message
 	scrollerSettings.CharOffset = scrollerSettings.WindowWidth - scrollerSettings.D
 
-	// Update rotate settings
-	if scrollerSettings.RotateChars {
-		// Char direction grow/shrink
-		if scrollerSettings.CharHeight >= CHAR_HEIGHT {
-			scrollerSettings.CharGrow = false
-		} else if scrollerSettings.CharHeight <= 1 {
-			scrollerSettings.CharGrow = true
-			scrollerSettings.Flipped = !scrollerSettings.Flipped
-		}
-
-		// Make char grow by changing CharHeight that is used for the destination rect
-		if scrollerSettings.CharGrow {
-			scrollerSettings.CharHeight += 1
-		} else if !scrollerSettings.CharGrow {
-			scrollerSettings.CharHeight -= 1
-		}
-	}
+	// Update rotate settings, including the collapse when rotation is disabled.
+	updateScrollerRotation(&scrollerSettings)
 }

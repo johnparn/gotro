@@ -261,7 +261,7 @@ func drawBoingBall(R, G, B uint8) {
 
 func drawSceneScroll() {
 
-	var msg []byte = []byte("welcome!             this is a text for testing purposes only               ")
+	var msg []byte = []byte("welcome!             this started as a test of golang                   and turned into a retrospective to effects of the demoscene in the late 80s and in the 90s          enjoy the fxs!                       ")
 
 	effects.InitScroller(renderer, windowWidth, windowHeight, msg, false)
 	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0, 1500, 2500)
@@ -270,6 +270,15 @@ func drawSceneScroll() {
 	effects.SetScrollerPauses([]effects.ScrollerPause{
 		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true, Unpause: effects.ScrollerUnpause{
 			WaveEnabled: false, RotateChars: true,
+		}},
+		{Offset: windowWidth/2 + 21*effects.CHAR_WIDTH, Duration: 0, WaveEnabled: false, RotateChars: true, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: false,
+		}},
+		{Offset: windowWidth/2 + 68*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 0, WaveEnabled: false, RotateChars: false, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: false,
+		}},
+		{Offset: windowWidth/2 + 179*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 2, WaveEnabled: true, RotateChars: false, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: false,
 		}},
 	})
 
