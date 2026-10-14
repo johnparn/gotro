@@ -382,7 +382,7 @@ func drawScenePlasma2() {
 
 	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
 	effects.InitializePlasma2(renderer, int(windowWidth), int(windowHeight))
-
+	effects.SetPlasma2FrameRateLimit(60)
 	var running bool = true
 
 	for running {

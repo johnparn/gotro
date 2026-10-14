@@ -3,7 +3,10 @@ package effects
 // Ported from plasma.cpp: https://github.com/johangardhage/retro-demoeffects
 
 import (
+	"fmt"
 	"math"
+	"time"
+	"unsafe"
 
 	"github.com/veandco/go-sdl2/sdl"
 )
@@ -12,35 +15,73 @@ const PLASMA_FRAMES int = 720
 const PLASMA_COLORS uint8 = 255
 
 type Plasma2Settings struct {
-	WindowWidth  int
-	WindowHeight int
-	Renderer     *sdl.Renderer
-	SineValues   float64
-	SineTable    []float64
-	Colors       [256]RGBColor
+	WindowWidth    int
+	WindowHeight   int
+	Renderer       *sdl.Renderer
+	Texture        *sdl.Texture
+	PixelBuffer    []byte
+	XValues        []float64
+	SineValues     float64
+	SineTable      []float64
+	Colors         [256]RGBColor
+	FrameRateLimit int
+	LastFrameTime  time.Time
 }
 
 var framecounter float64
 var plasma2Settings = Plasma2Settings{}
 var frame int
 
+// SetPlasma2FrameRateLimit sets the maximum render rate; fps <= 0 disables the limit.
+func SetPlasma2FrameRateLimit(fps int) {
+	plasma2Settings.FrameRateLimit = fps
+	plasma2Settings.LastFrameTime = time.Time{}
+}
+
 func RunPlasma2() {
+	if plasma2Settings.Texture == nil {
+		return
+	}
+	if fps := plasma2Settings.FrameRateLimit; fps > 0 {
+		frameDuration := time.Second / time.Duration(fps)
+		if !plasma2Settings.LastFrameTime.IsZero() {
+			if remaining := frameDuration - time.Since(plasma2Settings.LastFrameTime); remaining > 0 {
+				time.Sleep(remaining)
+			}
+		}
+		plasma2Settings.LastFrameTime = time.Now()
+	}
+
 	// Calculate frame
-	framecounter += 9
+	framecounter += 2
 	frame = int(math.Mod(framecounter, float64(PLASMA_FRAMES)))
 
-	for y := 0; y <= plasma2Settings.WindowHeight; y++ {
-		var yc float64 = 75 + plasma2Settings.SineTable[y+frame*2]*2 + plasma2Settings.SineTable[y*2+frame/2] + plasma2Settings.SineTable[y+frame]*2
-		// var x int = 0
-		for x := 0; x <= plasma2Settings.WindowWidth; x++ {
-			var xc float64 = 75 + plasma2Settings.SineTable[x*2+frame/2] + plasma2Settings.SineTable[x+frame*2] + plasma2Settings.SineTable[x/2+frame]*2
+	width := plasma2Settings.WindowWidth
+	height := plasma2Settings.WindowHeight
+	for x := 0; x < width; x++ {
+		plasma2Settings.XValues[x] = 75 + plasma2Settings.SineTable[x*2+frame/2] +
+			plasma2Settings.SineTable[x+frame*2] + plasma2Settings.SineTable[x/2+frame]*2
+	}
 
-			color := uint8(xc * yc)
-			PutPixel(plasma2Settings.Renderer, int32(x), int32(y), plasma2Settings.Colors[color].R.Value,
-				plasma2Settings.Colors[color].G.Value,
-				plasma2Settings.Colors[color].B.Value,
-				plasma2Settings.Colors[color].A.Value)
+	for y := 0; y < height; y++ {
+		var yc float64 = 75 + plasma2Settings.SineTable[y+frame*2]*2 + plasma2Settings.SineTable[y*2+frame/2] + plasma2Settings.SineTable[y+frame]*2
+		rowOffset := y * width * 4
+		for x, xc := range plasma2Settings.XValues {
+			color := plasma2Settings.Colors[uint8(xc*yc)]
+			pixelOffset := rowOffset + x*4
+			plasma2Settings.PixelBuffer[pixelOffset] = color.R.Value
+			plasma2Settings.PixelBuffer[pixelOffset+1] = color.G.Value
+			plasma2Settings.PixelBuffer[pixelOffset+2] = color.B.Value
+			plasma2Settings.PixelBuffer[pixelOffset+3] = color.A.Value
 		}
+	}
+
+	if err := plasma2Settings.Texture.Update(nil, unsafe.Pointer(&plasma2Settings.PixelBuffer[0]), width*4); err != nil {
+		fmt.Println("Could not update plasma texture:", err)
+		return
+	}
+	if err := plasma2Settings.Renderer.Copy(plasma2Settings.Texture, nil, nil); err != nil {
+		fmt.Println("Could not copy plasma texture:", err)
 	}
 }
 
@@ -52,7 +93,16 @@ func InitializePlasma2(renderer *sdl.Renderer, windowWidth int, windowHeight int
 	plasma2Settings.Renderer = renderer
 	plasma2Settings.WindowWidth = windowWidth
 	plasma2Settings.WindowHeight = windowHeight
+	plasma2Settings.PixelBuffer = make([]byte, windowWidth*windowHeight*4)
+	plasma2Settings.XValues = make([]float64, windowWidth)
 	plasma2Settings.SineValues = float64(windowWidth + PLASMA_FRAMES*2)
+
+	texture, err := renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STREAMING, int32(windowWidth), int32(windowHeight))
+	if err != nil {
+		fmt.Println("Could not create plasma texture:", err)
+		return
+	}
+	plasma2Settings.Texture = texture
 
 	// Init palette
 	var r uint8 = 0
