@@ -32,14 +32,15 @@ func main() {
 	var _ = sdl.PollEvent() //MacOS won't draw the window without this line
 
 	playMusic()
+
 	drawSceneScroll()
 	drawScenePlasma()
 	// drawRotoTunnel("flowers.bmp")
 	drawRotoTunnel("checkered.bmp")
 	// drawRotoTunnel("hexagon.bmp")
 	// drawRotoTunnel("pattern.bmp")
-
-	drawStars2()
+	
+	drawStars2()	
 	drawScenePlasma2()
 
 	drawSceneSinus(sdl.GetTicks64())
@@ -259,7 +260,7 @@ func drawBoingBall(R, G, B uint8) {
 	}
 }
 
-func drawSceneScroll() {
+func drawSceneScroll2() {
 
 	var msg []byte = []byte("welcome!             this started as a test of golang                   and turned into a retrospective to effects of the demoscene in the late 80s and in the 90s          enjoy the fxs!                       ")
 
@@ -355,10 +356,108 @@ func drawSceneScroll() {
 	}
 }
 
+
+func drawSceneScroll() {
+
+	var msg []byte = []byte("welcome!             this started as a test of golang                   and turned into a retrospective to effects of the demoscene in the late 80s and in the 90s          enjoy the fxs!                       ")
+
+	effects.InitScroller(renderer, windowWidth, windowHeight, msg, false)
+	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0, 1500, 2500)
+	effects.InitializeStars2(renderer, windowWidth, windowHeight)
+	
+	effects.SetScrollerPauses([]effects.ScrollerPause{
+		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: true,
+		}},
+		{Offset: windowWidth/2 + 21*effects.CHAR_WIDTH, Duration: 0, WaveEnabled: false, RotateChars: true, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: false,
+		}},
+		{Offset: windowWidth/2 + 68*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 0, WaveEnabled: false, RotateChars: false, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: false,
+		}},
+		{Offset: windowWidth/2 + 179*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 2, WaveEnabled: true, RotateChars: false, Unpause: effects.ScrollerUnpause{
+			WaveEnabled: false, RotateChars: false,
+		}},
+	})
+
+	var running bool = true
+	var rgbColors [2]effects.RGBColor
+	// var startTick uint64 = sdl.GetTicks64()
+
+	rgbColors[0] = effects.RGBColor{
+		R: effects.Color{Value: uint8(255), Increment: -1},
+		G: effects.Color{Value: uint8(0), Increment: 1},
+		B: effects.Color{Value: uint8(255), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	rgbColors[1] = effects.RGBColor{
+		R: effects.Color{Value: uint8(51), Increment: 1},
+		G: effects.Color{Value: uint8(153), Increment: 1},
+		B: effects.Color{Value: uint8(201), Increment: -1},
+		A: effects.Color{Value: uint8(255), Increment: 1},
+	}
+
+	var sine [2]effects.Sine
+	sine[0] = effects.Sine{
+		Amplitude: 0.0,
+		Step:      0.0025,
+		Threshold: 0.25,
+		AmpDown:   true,
+		OffsetX:   0,
+		OffsetY:   0,
+		Frequency: (math.Pi / FPS),
+		Angle:     math.Pi,
+		RGBColor:  rgbColors[0],
+	}
+
+	sine[1] = effects.Sine{
+		Amplitude: 0.0,
+		Step:      0.0025,
+		Threshold: 0.30,
+		AmpDown:   true,
+		OffsetX:   0,
+		OffsetY:   0,
+		Frequency: (math.Pi / FPS),
+		Angle:     math.Pi,
+		RGBColor:  rgbColors[1],
+	}
+
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+
+			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
+			}
+
+		}
+		// renderer.Clear()
+		renderer.SetDrawColor(15, 15, 23, 1)
+		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
+		// rasterBars()
+		effects.RunStars2()
+		effects.SineWave(renderer, &sine[0], windowWidth, windowHeight)
+		effects.SineWave(renderer, &sine[1], windowWidth, windowHeight)
+		effects.RunScroller()
+
+		// if sdl.GetTicks64() >= startTick+40000 {
+		// 	running = false
+		// 	break
+		// }
+		updateScreen()
+
+	}
+}
+
 func drawStars2() {
 
 	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
 	effects.InitializeStars2(renderer, windowWidth, windowHeight)
+	effects.InitializeConcentric(renderer, windowWidth, windowHeight)
 
 	var running bool = true
 
@@ -366,7 +465,19 @@ func drawStars2() {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.GetType() {
+			// case sdl.KEYDOWN:
+			// 	key := event.(*sdl.KeyboardEvent).Keysym.Sym
+			// 	switch key {
+			// 	case sdl.K_UP:
+			// 		effects.AdjustConcentricHeightScale(0.05)
+			// 	case sdl.K_DOWN:
+			// 		effects.AdjustConcentricHeightScale(-0.05)
+			// 	}
 			case sdl.KEYUP:
+				// key := event.(*sdl.KeyboardEvent).Keysym.Sym
+				// if key != sdl.K_UP && key != sdl.K_DOWN {
+				// 	running = false
+				// }
 				running = false
 			case sdl.MOUSEBUTTONDOWN:
 				running = false
@@ -374,6 +485,7 @@ func drawStars2() {
 		}
 
 		effects.RunStars2()
+		effects.RunConcentric()
 		updateScreen()
 	}
 }
