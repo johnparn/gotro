@@ -36,7 +36,8 @@ type Point2Df struct {
 var Circle [DOTTUNNEL_NUMPOINTS]Point2Df
 var counter float64 = 0
 var tunnelSettings = TunnelSettings{}
-var renderer *sdl.Renderer
+
+// var renderer *sdl.Renderer
 
 func RenderDotTunnel(deltatime float64) {
 

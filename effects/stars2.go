@@ -56,10 +56,10 @@ func (s *stars2Settings) setColorBuffer(colorIndex, r, g, b, a uint8) {
 	s.Colors[colorIndex] = RGBColor{R: Color{Value: r}, G: Color{Value: g}, B: Color{Value: b}, A: Color{Value: a}}
 }
 
-func InitializeStars2(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
+func InitializeStars2(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
 	settings.Renderer = renderer
-	settings.WindowWidth = windowWidth
-	settings.WindowHeight = windowHeight
+	settings.WindowWidth = int(windowWidth)
+	settings.WindowHeight = int(windowHeight)
 
 	var i uint8
 	for i = range 64 {

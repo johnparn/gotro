@@ -114,10 +114,10 @@ func RunRotoTunnel() {
 	}
 }
 
-func InitializeRotoTunnel(renderer *sdl.Renderer, windowWidth int, windowHeight int, imageName string) {
+func InitializeRotoTunnel(renderer *sdl.Renderer, windowWidth int32, windowHeight int32, imageName string) {
 	rotoTunnelSettings.Renderer = renderer
-	rotoTunnelSettings.WindowWidth = windowWidth
-	rotoTunnelSettings.WindowHeight = windowHeight
+	rotoTunnelSettings.WindowWidth = int(windowWidth)
+	rotoTunnelSettings.WindowHeight = int(windowHeight)
 	if imageName != "" {
 		rotoTunnelSettings.imageName = imageName
 	}
@@ -130,8 +130,8 @@ func InitializeRotoTunnel(renderer *sdl.Renderer, windowWidth int, windowHeight 
 		os.Exit(1)
 	}
 	rotoTunnelSettings.Texture = texture
-	rotoTunnelSettings.pitch = windowWidth * 4
-	rotoTunnelSettings.pixelBuffer = make([]byte, windowWidth*windowHeight*4)
+	rotoTunnelSettings.pitch = rotoTunnelSettings.WindowWidth * 4
+	rotoTunnelSettings.pixelBuffer = make([]byte, rotoTunnelSettings.WindowWidth*rotoTunnelSettings.WindowHeight*4)
 
 	//load image into surface
 	image, errTmpImg := img.Load(rotoTunnelSettings.imageName)

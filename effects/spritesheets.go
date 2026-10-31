@@ -3,31 +3,16 @@ package effects
 import (
 	"fmt"
 	"math/rand"
-	"time"
 
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <time.h>
-// #include "SDL2/SDL.h"
-// #include "SDL2/SDL_image.h"
-
-// #define WINDOW_WIDTH 1200
-// #define WINDOW_HEIGHT 800
-// #define SPRITE_WIDTH 18
-// #define SPRITE_HEIGHT 28
-
 const SPRITE_HEIGHT int = 32
 const SPRITE_WIDTH int = 32
 
-// #define TRUE 1
-// #define FALSE 0
-
 func Spritesheet(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 
 	// Load the spritesheet
 	spriteSheet, errSpriteSheet := img.Load("32x32-fm.png")
@@ -68,44 +53,13 @@ func Spritesheet(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
 		fmt.Println("Create texture")
 	}
 
-	// var quit bool = false
-	// var event sdl.Event
 	var ticks_elapsed uint64
-	// for !quit {
-	// We want to render once a second, but we don't want to hang up our event
-	// pump, so SDL_Delay is a bad choice.  Instead figure out how long the main
-	// loop takes, and increment a counter until a second has passed, then render
+
 	old_ticks := sdl.GetTicks64()
-	//for quit {
-	// event = sdl.PollEvent()
-
-	// // var running bool = true
-	// // for running {
-	// switch event.GetType() {
-	// case sdl.QUIT:
-	// 	quit = true
-	// 	return
-	// case sdl.KEYDOWN:
-	// 	// fmt.Printf("Key pressed: %i\n", event.key.keysym.sym)
-	// 	// if event.key.keysym.sym == sdl.K_ESCAPE {
-	// 	// 	quit = true
-	// 	// }
-	// 	quit = true
-	// 	return
-	// }
-	//}
-
-	// Set the renderer to render to the double buffer
-	//SDL_SetRenderTarget(renderer, buffer);
-
 	renderer.SetRenderTarget(buffer)
 
-	// Now clear the buffer and blit a random assortment of sprites,
-	// with a random assortment of colors, to the double buffer
 	renderer.SetDrawColor(0, 0, 0, 255)
 	renderer.Clear()
-	// SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	// SDL_RenderClear(renderer);
 
 	if ticks_elapsed > 1000 {
 		//     ticks_elapsed = 0;
@@ -113,16 +67,6 @@ func Spritesheet(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
 			for j := 0; j < windowWidth/SPRITE_HEIGHT+1; j++ {
 				glyph_x := rand.Intn(60) % 10
 				glyph_y := 3 + rand.Intn(6)%6
-				// SDL_Color fg = {
-				//     rand() % 256,
-				//     rand() % 256,
-				//     rand() % 256,
-				//     255};
-				// SDL_Color bg = {
-				//     rand() % 256,
-				//     rand() % 256,
-				//     rand() % 256,
-				//     255};
 
 				// Clipping rects for source (cut from spritesheet)
 				// and dest (buffer location)
@@ -136,27 +80,12 @@ func Spritesheet(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
 				// Tint the sprite to be blitted
 				tex_sheet.SetColorMod(0, 0, 0)
 				renderer.Copy(tex_sheet, &src_rect, &dest_rect)
-				// SDL_SetTextureColorMod(tex_sheet, 0, 0, 0);
-				// SDL_RenderCopy(renderer, tex_sheet, &src_rect, &dest_rect);
 			}
 		}
 		// Set the renderer back to the screen, clear it, and flip the buffer
 		renderer.SetRenderTarget(nil)
 		renderer.Copy(buffer, nil, nil)
-		// renderer.Present()
-		// SDL_SetRenderTarget(renderer, NULL);
-		// SDL_RenderCopy(
-		//     renderer,
-		//     buffer,
-		//     NULL,
-		//     NULL);
-		// SDL_RenderPresent(renderer);
 	}
 
 	ticks_elapsed += sdl.GetTicks64() - old_ticks
-	//}
-
-	// Teardown
-	// IMG_Quit();
-	// SDL_Quit();
 }

@@ -5,7 +5,6 @@ import (
 	"math"
 	"os"
 	"runtime"
-	"time"
 
 	"github.com/johnparn/gotro/effects"
 	"github.com/veandco/go-sdl2/img"
@@ -13,11 +12,17 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-const (
-	FPS          = 60
-	windowWidth  = 800
-	windowHeight = 600
-)
+type IntroSettings struct {
+	windowWidth  int32
+	windowHeight int32
+	FPS          int
+}
+
+var introSettings = IntroSettings{
+	windowWidth:  800,
+	windowHeight: 600,
+	FPS:          60,
+}
 
 var window *sdl.Window
 var renderer *sdl.Renderer
@@ -29,33 +34,35 @@ func main() {
 
 	window = createWindow()
 	renderer = createRenderer()
+
 	var _ = sdl.PollEvent() //MacOS won't draw the window without this line
 
 	playMusic()
 
+	// sceneWidth, sceneHeight, err := renderer.GetOutputSize()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// introSettings.windowWidth = sceneWidth
+	// introSettings.windowHeight = sceneHeight
+
 	drawSceneScroll()
 	drawScenePlasma()
-	// drawRotoTunnel("flowers.bmp")
-	drawRotoTunnel("checkered.bmp")
-	// drawRotoTunnel("hexagon.bmp")
-	// drawRotoTunnel("pattern.bmp")
-	
-	drawStars2()	
-	drawScenePlasma2()
+	drawRotoTunnel("hexagon.bmp")
 
+	drawStars2()
+	drawScenePlasma2()
 	drawSceneSinus(sdl.GetTicks64())
+
 	drawDotTunnel()
 	drawDotSphere()
 	drawTwister()
+
 	drawBoingBall(192, 102, 0)
 
 	_ = renderer.Destroy()
 	_ = window.Destroy()
 
-}
-
-func sleepSeconds(secs time.Duration) {
-	time.Sleep(time.Second * secs)
 }
 
 func sdlInitVideo() {
@@ -103,9 +110,10 @@ func createWindow() *sdl.Window {
 	window, errCreatingSDLWindow := sdl.CreateWindow("Intro",
 		sdl.WINDOWPOS_CENTERED,
 		sdl.WINDOWPOS_CENTERED,
-		windowWidth,
-		windowHeight,
-		sdl.WINDOW_MAXIMIZED|sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
+		introSettings.windowWidth,
+		introSettings.windowHeight,
+		sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
+	//sdl.WINDOW_FULLSCREEN|sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
 
 	if errCreatingSDLWindow != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to create SDL window: %s\n", errCreatingSDLWindow)
@@ -157,10 +165,9 @@ func playMusic() {
 }
 
 func drawRotoTunnel(imageName string) {
-
 	var running bool = true
 
-	effects.InitializeRotoTunnel(renderer, windowWidth, windowHeight, imageName)
+	effects.InitializeRotoTunnel(renderer, introSettings.windowWidth, introSettings.windowHeight, imageName)
 	for running {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -180,7 +187,7 @@ func drawDotTunnel() {
 
 	var running bool = true
 
-	effects.InitializeTunnel(renderer, windowWidth, windowHeight)
+	effects.InitializeTunnel(renderer, introSettings.windowWidth, introSettings.windowHeight)
 	for running {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -200,7 +207,7 @@ func drawDotSphere() {
 
 	var running bool = true
 
-	effects.InitializeDotSphere(renderer, windowWidth, windowHeight)
+	effects.InitializeDotSphere(renderer, introSettings.windowWidth, introSettings.windowHeight)
 	for running {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -220,7 +227,7 @@ func drawTwister() {
 
 	var running bool = true
 
-	effects.InitTwister(renderer, windowWidth, windowHeight)
+	effects.InitTwister(renderer, introSettings.windowWidth, introSettings.windowHeight)
 	for running {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -243,8 +250,8 @@ func drawBoingBall(R, G, B uint8) {
 
 	// backgroundFill(0, 0, 0)
 	renderer.SetDrawColor(R, G, B, 255)
-	renderer.DrawRect(&sdl.Rect{X: 0, Y: 0, W: windowWidth, H: windowHeight})
-	effects.InitBoingball(renderer, windowWidth, windowHeight, 128, 64, 32)
+	renderer.DrawRect(&sdl.Rect{X: 0, Y: 0, W: introSettings.windowWidth, H: introSettings.windowHeight})
+	effects.InitBoingball(renderer, introSettings.windowWidth, introSettings.windowHeight, 128, 64, 32)
 	for running {
 		// Quit this scene
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -260,122 +267,25 @@ func drawBoingBall(R, G, B uint8) {
 	}
 }
 
-func drawSceneScroll2() {
-
-	var msg []byte = []byte("welcome!             this started as a test of golang                   and turned into a retrospective to effects of the demoscene in the late 80s and in the 90s          enjoy the fxs!                       ")
-
-	effects.InitScroller(renderer, windowWidth, windowHeight, msg, false)
-	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0, 1500, 2500)
-	effects.InitializeStars2(renderer, windowWidth, windowHeight)
-
-	effects.SetScrollerPauses([]effects.ScrollerPause{
-		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true, Unpause: effects.ScrollerUnpause{
-			WaveEnabled: false, RotateChars: true,
-		}},
-		{Offset: windowWidth/2 + 21*effects.CHAR_WIDTH, Duration: 0, WaveEnabled: false, RotateChars: true, Unpause: effects.ScrollerUnpause{
-			WaveEnabled: false, RotateChars: false,
-		}},
-		{Offset: windowWidth/2 + 68*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 0, WaveEnabled: false, RotateChars: false, Unpause: effects.ScrollerUnpause{
-			WaveEnabled: false, RotateChars: false,
-		}},
-		{Offset: windowWidth/2 + 179*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 2, WaveEnabled: true, RotateChars: false, Unpause: effects.ScrollerUnpause{
-			WaveEnabled: false, RotateChars: false,
-		}},
-	})
-
-	var running bool = true
-	var rgbColors [2]effects.RGBColor
-	// var startTick uint64 = sdl.GetTicks64()
-
-	rgbColors[0] = effects.RGBColor{
-		R: effects.Color{Value: uint8(255), Increment: -1},
-		G: effects.Color{Value: uint8(0), Increment: 1},
-		B: effects.Color{Value: uint8(255), Increment: -1},
-		A: effects.Color{Value: uint8(255), Increment: 1},
-	}
-
-	rgbColors[1] = effects.RGBColor{
-		R: effects.Color{Value: uint8(51), Increment: 1},
-		G: effects.Color{Value: uint8(153), Increment: 1},
-		B: effects.Color{Value: uint8(201), Increment: -1},
-		A: effects.Color{Value: uint8(255), Increment: 1},
-	}
-
-	var sine [2]effects.Sine
-	sine[0] = effects.Sine{
-		Amplitude: 0.0,
-		Step:      0.0025,
-		Threshold: 0.25,
-		AmpDown:   true,
-		OffsetX:   0,
-		OffsetY:   0,
-		Frequency: (math.Pi / FPS),
-		Angle:     math.Pi,
-		RGBColor:  rgbColors[0],
-	}
-
-	sine[1] = effects.Sine{
-		Amplitude: 0.0,
-		Step:      0.0025,
-		Threshold: 0.30,
-		AmpDown:   true,
-		OffsetX:   0,
-		OffsetY:   0,
-		Frequency: (math.Pi / FPS),
-		Angle:     math.Pi,
-		RGBColor:  rgbColors[1],
-	}
-
-	for running {
-		// Quit this scene
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.GetType() {
-
-			case sdl.KEYUP:
-				running = false
-			case sdl.MOUSEBUTTONDOWN:
-				running = false
-			}
-
-		}
-		// renderer.Clear()
-		renderer.SetDrawColor(15, 15, 23, 1)
-		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
-		// rasterBars()
-		effects.RunStars2()
-		effects.SineWave(renderer, &sine[0], windowWidth, windowHeight)
-		effects.SineWave(renderer, &sine[1], windowWidth, windowHeight)
-		effects.RunScroller()
-
-		// if sdl.GetTicks64() >= startTick+40000 {
-		// 	running = false
-		// 	break
-		// }
-		updateScreen()
-
-	}
-}
-
-
 func drawSceneScroll() {
 
 	var msg []byte = []byte("welcome!             this started as a test of golang                   and turned into a retrospective to effects of the demoscene in the late 80s and in the 90s          enjoy the fxs!                       ")
 
-	effects.InitScroller(renderer, windowWidth, windowHeight, msg, false)
+	effects.InitScroller(renderer, introSettings.windowWidth, introSettings.windowHeight, msg, false)
 	effects.SetScrollerWaveConfig(false, "sine", 48, 0.015, 0.0, 0, 1500, 2500)
-	effects.InitializeStars2(renderer, windowWidth, windowHeight)
-	
+	effects.InitializeStars2(renderer, introSettings.windowWidth, introSettings.windowHeight)
+
 	effects.SetScrollerPauses([]effects.ScrollerPause{
-		{Offset: windowWidth/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true, Unpause: effects.ScrollerUnpause{
+		{Offset: int(introSettings.windowWidth)/2 + 4*effects.CHAR_WIDTH, Duration: 3, WaveEnabled: true, RotateChars: true, Unpause: effects.ScrollerUnpause{
 			WaveEnabled: false, RotateChars: true,
 		}},
-		{Offset: windowWidth/2 + 21*effects.CHAR_WIDTH, Duration: 0, WaveEnabled: false, RotateChars: true, Unpause: effects.ScrollerUnpause{
+		{Offset: int(introSettings.windowWidth)/2 + 21*effects.CHAR_WIDTH, Duration: 0, WaveEnabled: false, RotateChars: true, Unpause: effects.ScrollerUnpause{
 			WaveEnabled: false, RotateChars: false,
 		}},
-		{Offset: windowWidth/2 + 68*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 0, WaveEnabled: false, RotateChars: false, Unpause: effects.ScrollerUnpause{
+		{Offset: int(introSettings.windowWidth)/2 + 68*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 0, WaveEnabled: false, RotateChars: false, Unpause: effects.ScrollerUnpause{
 			WaveEnabled: false, RotateChars: false,
 		}},
-		{Offset: windowWidth/2 + 179*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 2, WaveEnabled: true, RotateChars: false, Unpause: effects.ScrollerUnpause{
+		{Offset: int(introSettings.windowWidth)/2 + 179*effects.CHAR_WIDTH + effects.CHAR_WIDTH/2, Duration: 2, WaveEnabled: true, RotateChars: false, Unpause: effects.ScrollerUnpause{
 			WaveEnabled: false, RotateChars: false,
 		}},
 	})
@@ -406,7 +316,7 @@ func drawSceneScroll() {
 		AmpDown:   true,
 		OffsetX:   0,
 		OffsetY:   0,
-		Frequency: (math.Pi / FPS),
+		Frequency: (math.Pi / float64(introSettings.FPS)),
 		Angle:     math.Pi,
 		RGBColor:  rgbColors[0],
 	}
@@ -418,7 +328,7 @@ func drawSceneScroll() {
 		AmpDown:   true,
 		OffsetX:   0,
 		OffsetY:   0,
-		Frequency: (math.Pi / FPS),
+		Frequency: (math.Pi / float64(introSettings.FPS)),
 		Angle:     math.Pi,
 		RGBColor:  rgbColors[1],
 	}
@@ -437,17 +347,13 @@ func drawSceneScroll() {
 		}
 		// renderer.Clear()
 		renderer.SetDrawColor(15, 15, 23, 1)
-		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
-		// rasterBars()
+		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(introSettings.windowWidth), H: int32(introSettings.windowHeight)})
+
 		effects.RunStars2()
-		effects.SineWave(renderer, &sine[0], windowWidth, windowHeight)
-		effects.SineWave(renderer, &sine[1], windowWidth, windowHeight)
+		effects.SineWave(renderer, &sine[0], introSettings.windowWidth, introSettings.windowHeight)
+		effects.SineWave(renderer, &sine[1], introSettings.windowWidth, introSettings.windowHeight)
 		effects.RunScroller()
 
-		// if sdl.GetTicks64() >= startTick+40000 {
-		// 	running = false
-		// 	break
-		// }
 		updateScreen()
 
 	}
@@ -456,8 +362,8 @@ func drawSceneScroll() {
 func drawStars2() {
 
 	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
-	effects.InitializeStars2(renderer, windowWidth, windowHeight)
-	effects.InitializeConcentric(renderer, windowWidth, windowHeight)
+	effects.InitializeStars2(renderer, introSettings.windowWidth, introSettings.windowHeight)
+	effects.InitializeConcentric(renderer, introSettings.windowWidth, introSettings.windowHeight)
 
 	var running bool = true
 
@@ -493,7 +399,7 @@ func drawStars2() {
 func drawScenePlasma2() {
 
 	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
-	effects.InitializePlasma2(renderer, int(windowWidth), int(windowHeight))
+	effects.InitializePlasma2(renderer, int(introSettings.windowWidth), int(introSettings.windowHeight))
 	effects.SetPlasma2FrameRateLimit(60)
 	var running bool = true
 
@@ -509,10 +415,6 @@ func drawScenePlasma2() {
 		}
 
 		effects.RunPlasma2()
-
-		// Moving plasma
-		// plasma = effects.RunPlasma(&plasma)
-
 		updateScreen()
 	}
 }
@@ -522,7 +424,7 @@ func drawScenePlasma() {
 	var startTick uint64 = sdl.GetTicks64()
 
 	//plasma := effects.InitPlasma(renderer, windowWidth, windowHeight)
-	effects.InitPlasma(renderer, windowWidth, windowHeight)
+	effects.InitPlasma(renderer, introSettings.windowWidth, introSettings.windowHeight)
 
 	var running bool = true
 
@@ -550,7 +452,7 @@ func drawScenePlasma() {
 func drawSceneSinus(startTick uint64) {
 
 	var amp float64 = 0.0
-	var frequency float64 = (math.Pi / FPS)
+	var frequency float64 = (math.Pi / float64(introSettings.FPS))
 	var angle float64 = math.Pi
 	var running bool = true
 
@@ -613,7 +515,7 @@ func drawSceneSinus(startTick uint64) {
 		A: effects.Color{Value: uint8(255), Increment: 1},
 	}
 
-	effects.ResetStars(renderer, windowWidth, windowHeight)
+	effects.ResetStars(renderer, introSettings.windowWidth, introSettings.windowHeight)
 
 	var sine [6]effects.Sine
 	sine[0] = effects.Sine{
@@ -683,7 +585,7 @@ func drawSceneSinus(startTick uint64) {
 		RGBColor:  rbgColors[3],
 	}
 
-	effects.InitStars(renderer, windowWidth, windowHeight)
+	effects.InitStars(renderer, introSettings.windowWidth, introSettings.windowHeight)
 
 	for running {
 
@@ -699,7 +601,7 @@ func drawSceneSinus(startTick uint64) {
 
 		// Clear background
 		renderer.SetDrawColor(15, 15, 23, 1)
-		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
+		renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(introSettings.windowWidth), H: int32(introSettings.windowHeight)})
 
 		// Stars
 		effects.UpdateStars()
@@ -708,27 +610,27 @@ func drawSceneSinus(startTick uint64) {
 		ticks := sdl.GetTicks64()
 
 		if ticks >= startTick+1000 {
-			effects.SineWave(renderer, &sine[1], windowWidth, windowHeight)
+			effects.SineWave(renderer, &sine[1], introSettings.windowWidth, introSettings.windowHeight)
 		}
 		if ticks >= 3000+startTick {
-			effects.SineWave(renderer, &sine[0], windowWidth, windowHeight)
+			effects.SineWave(renderer, &sine[0], introSettings.windowWidth, introSettings.windowHeight)
 		}
 		if ticks >= 4500+startTick {
-			effects.SineWave(renderer, &sine[2], windowWidth, windowHeight)
+			effects.SineWave(renderer, &sine[2], introSettings.windowWidth, introSettings.windowHeight)
 		}
 		if ticks >= 6000+startTick {
-			effects.SineWave(renderer, &sine[3], windowWidth, windowHeight)
+			effects.SineWave(renderer, &sine[3], introSettings.windowWidth, introSettings.windowHeight)
 		}
 		if ticks >= 7000+startTick {
-			effects.SineWave(renderer, &sine[4], windowWidth, windowHeight)
+			effects.SineWave(renderer, &sine[4], introSettings.windowWidth, introSettings.windowHeight)
 		}
 		if ticks >= 7500+startTick {
-			effects.SineWave(renderer, &sine[5], windowWidth, windowHeight)
+			effects.SineWave(renderer, &sine[5], introSettings.windowWidth, introSettings.windowHeight)
 		}
 
 		// Show cube
 		if ticks >= 8000+startTick {
-			effects.SpinningCube(renderer, windowWidth, windowHeight)
+			effects.SpinningCube(renderer, introSettings.windowWidth, introSettings.windowHeight)
 		}
 
 		if sdl.GetTicks64() >= 24000+startTick {
@@ -740,11 +642,6 @@ func drawSceneSinus(startTick uint64) {
 	}
 }
 
-var delayTime uint64 = 1000 / FPS
-var startTime uint64 = 0
-var renderTime uint64 = 0
-var diffTime uint32 = 0
-
 // var fpscap uint64 = 0
 // var fpsticks uint64 = 0
 // var fpscount int64 = 0
@@ -752,9 +649,7 @@ var diffTime uint32 = 0
 func updateScreen() {
 
 	// Time taken to render frame
-	//startTime = sdl.GetTicks64()
 	renderer.Present()
-	//renderTime = sdl.GetTicks64() - startTime
 
 	// Clear screen
 	renderer.SetDrawColor(0, 0, 0, 255)

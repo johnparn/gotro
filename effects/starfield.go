@@ -1,6 +1,7 @@
 package effects
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -21,28 +22,28 @@ type StarsSettings struct {
 }
 
 var stars [NUM_STARS]Star
-
-// int getStarColor(int);
-
 var starSettings StarsSettings
 
-func ResetStars(renderer *sdl.Renderer, windowWidth, windowHeight int) {
+func ResetStars(renderer *sdl.Renderer, windowWidth, windowHeight int32) {
 
 	renderer.SetDrawColor(15, 15, 23, 1)
 	renderer.FillRect(&sdl.Rect{X: 0, Y: 0, W: int32(windowWidth), H: int32(windowHeight)})
-	rand.Seed(time.Now().UnixNano())
+
+	fmt.Println("Resetting star", starSettings.WindowWidth%20, starSettings.WindowHeight%20)
+	starSettings.WindowWidth = int(windowWidth)
+	starSettings.WindowHeight = int(windowHeight)
 	for i := 0; i < NUM_STARS; i++ {
-		stars[i].X = rand.Intn(windowWidth) % 20
-		stars[i].Y = rand.Intn(windowHeight) % 20
+		stars[i].X = rand.Intn(starSettings.WindowWidth) % 20
+		stars[i].Y = rand.Intn(starSettings.WindowHeight) % 20
 		stars[i].speed = 1 + (rand.Intn(60) % 12)
 	}
 }
 
-func InitStars(renderer *sdl.Renderer, windowWidth, windowHeight int) {
+func InitStars(renderer *sdl.Renderer, windowWidth, windowHeight int32) {
 	starSettings = StarsSettings{}
 	starSettings.Renderer = renderer
-	starSettings.WindowWidth = windowWidth
-	starSettings.WindowHeight = windowHeight
+	starSettings.WindowWidth = int(windowWidth)
+	starSettings.WindowHeight = int(windowHeight)
 	starSettings.NumberOfStars = NUM_STARS
 
 	rand.Seed(time.Now().UnixNano())

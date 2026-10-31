@@ -18,7 +18,7 @@ type Sine struct {
 	OffsetY   int
 }
 
-func SineWave(renderer *sdl.Renderer, sine *Sine, windowWidth int, windowHeight int) {
+func SineWave(renderer *sdl.Renderer, sine *Sine, windowWidth int32, windowHeight int32) {
 
 	drawSine(renderer, sine, windowWidth, windowHeight)
 	SetAmplitude(sine)
@@ -41,7 +41,7 @@ func SetAmplitude(sine *Sine) {
 	}
 }
 
-func drawSine(renderer *sdl.Renderer, sine *Sine, windowWidth int, windowHeight int) {
+func drawSine(renderer *sdl.Renderer, sine *Sine, windowWidth int32, windowHeight int32) {
 
 	// Copy reference values as we don't want to change the reference here
 	angle := sine.Angle
@@ -53,7 +53,7 @@ func drawSine(renderer *sdl.Renderer, sine *Sine, windowWidth int, windowHeight 
 	var i int32
 	// renderer.SetDrawBlendMode(sdl.BLENDMODE_ADD)
 
-	for i = 0; i < int32(windowWidth); i++ {
+	for i = 0; i < windowWidth; i++ {
 		y := math.Sin(angle)*sine.Amplitude*(float64(windowHeight/2)*0.5) + float64(sine.OffsetX) + float64(windowHeight/2)
 
 		rColor = GetColor(rColor)

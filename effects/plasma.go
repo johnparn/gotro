@@ -30,11 +30,11 @@ func getColor(x int, y int, windowWidth int, windowHeight int) uint8 {
 }
 
 // Pregenerate plasma, palette
-func InitPlasma(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
+func InitPlasma(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
 
 	plasmaSettings.Renderer = renderer
-	plasmaSettings.WindowWidth = windowWidth
-	plasmaSettings.WindowHeight = windowHeight
+	plasmaSettings.WindowWidth = int(windowWidth)
+	plasmaSettings.WindowHeight = int(windowHeight)
 
 	// Pregenerate plasma
 	// 2D slices - 1st dimension equals window width, 2nd equals window height

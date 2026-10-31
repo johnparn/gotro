@@ -189,9 +189,9 @@ func abs(i int) int {
 }
 
 // Bresenham implementation from https://github.com/eaburns/quart/blob/master/geom/2d_draw.go#L164
-func drawEdge(renderer *sdl.Renderer, w, h int, c color.Color, p0, p1 []float64) {
-	o_x := w / 2
-	o_y := h / 2
+func drawEdge(renderer *sdl.Renderer, w, h int32, c color.Color, p0, p1 []float64) {
+	o_x := int(w / 2)
+	o_y := int(h / 2)
 	ar := float64(w) / float64(h)
 
 	x0 := o_x + int(p0[0]*float64(o_x))
@@ -238,7 +238,7 @@ func drawEdge(renderer *sdl.Renderer, w, h int, c color.Color, p0, p1 []float64)
 	}
 }
 
-func drawObject(renderer *sdl.Renderer, w, h int, c color.Color,
+func drawObject(renderer *sdl.Renderer, w, h int32, c color.Color,
 	drawIdxList []int, meshTris [][]uint, perspVerts [][]float64) {
 
 	for _, triIdx := range drawIdxList {
@@ -256,7 +256,7 @@ func drawObject(renderer *sdl.Renderer, w, h int, c color.Color,
 	}
 }
 
-func SpinningCube(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
+func SpinningCube(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
 
 	w := windowWidth
 	h := windowHeight

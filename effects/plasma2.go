@@ -93,11 +93,11 @@ func InitializePlasma2(renderer *sdl.Renderer, windowWidth int, windowHeight int
 	plasma2Settings.Renderer = renderer
 	plasma2Settings.WindowWidth = windowWidth
 	plasma2Settings.WindowHeight = windowHeight
-	plasma2Settings.PixelBuffer = make([]byte, windowWidth*windowHeight*4)
-	plasma2Settings.XValues = make([]float64, windowWidth)
-	plasma2Settings.SineValues = float64(windowWidth + PLASMA_FRAMES*2)
+	plasma2Settings.PixelBuffer = make([]byte, plasma2Settings.WindowWidth*plasma2Settings.WindowHeight*4)
+	plasma2Settings.XValues = make([]float64, plasma2Settings.WindowWidth)
+	plasma2Settings.SineValues = float64(plasma2Settings.WindowWidth + PLASMA_FRAMES*2)
 
-	texture, err := renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STREAMING, int32(windowWidth), int32(windowHeight))
+	texture, err := renderer.CreateTexture(uint32(sdl.PIXELFORMAT_RGBA32), sdl.TEXTUREACCESS_STREAMING, int32(plasma2Settings.WindowWidth), int32(plasma2Settings.WindowHeight))
 	if err != nil {
 		fmt.Println("Could not create plasma texture:", err)
 		return

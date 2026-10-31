@@ -212,7 +212,7 @@ func StartScrollerWaveFadeOut() {
 }
 
 // Setup scroller settings
-func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg []byte, rotateChars bool) {
+func InitScroller(renderer *sdl.Renderer, windowWidth int32, windowHeight int32, msg []byte, rotateChars bool) {
 
 	scrollerSettings.Renderer = renderer
 	scrollerSettings.RotateChars = rotateChars
@@ -250,8 +250,8 @@ func InitScroller(renderer *sdl.Renderer, windowWidth int, windowHeight int, msg
 	}
 
 	scrollerSettings.CharMap = cMap
-	scrollerSettings.WindowWidth = windowWidth
-	scrollerSettings.WindowHeight = windowHeight
+	scrollerSettings.WindowWidth = int(windowWidth)
+	scrollerSettings.WindowHeight = int(windowHeight)
 	scrollerSettings.D = 1
 	scrollerSettings.CharOffset = 0
 	scrollerSettings.LastFrameMs = uint64(sdl.GetTicks64())

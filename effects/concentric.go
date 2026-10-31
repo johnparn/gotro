@@ -26,23 +26,23 @@ type concentricRing struct {
 }
 
 type concentricSettings struct {
-	renderer  *sdl.Renderer
-	width     int
-	height    int
-	lastSpawn time.Time
-	rings     []concentricRing
-	points    []sdl.Point
-	scalingStep float64
+	renderer         *sdl.Renderer
+	width            int
+	height           int
+	lastSpawn        time.Time
+	rings            []concentricRing
+	points           []sdl.Point
+	scalingStep      float64
 	scalingDirection int
 }
 
 var concentric = concentricSettings{}
 
 // InitializeConcentric prepares the expanding-ring effect for the given renderer size.
-func InitializeConcentric(renderer *sdl.Renderer, windowWidth int, windowHeight int) {
+func InitializeConcentric(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
 	concentric.renderer = renderer
-	concentric.width = windowWidth
-	concentric.height = windowHeight
+	concentric.width = int(windowWidth)
+	concentric.height = int(windowHeight)
 	concentric.lastSpawn = time.Time{}
 	concentric.rings = concentric.rings[:0]
 	concentric.points = concentric.points[:0]
@@ -80,24 +80,23 @@ func RunConcentric() {
 	centerX := float64(concentric.width) / 2
 	centerY := float64(concentric.height) / 2
 	maxRadius := centerX
-	
+
 	// if heightScale > 0 {
 	// 	maxRadius = math.Hypot(centerX, centerY/heightScale)
 	// }
 
-
-	if (concentric.scalingStep > 0) {	
-		if (concentric.scalingDirection == 0) {
+	if concentric.scalingStep > 0 {
+		if concentric.scalingDirection == 0 {
 			AdjustConcentricHeightScale(-concentric.scalingStep)
 		} else {
 			AdjustConcentricHeightScale(concentric.scalingStep)
 		}
-		if (heightScale <= 0) {
+		if heightScale <= 0 {
 			concentric.scalingDirection = 1
-		} else if (heightScale >= 1) {
+		} else if heightScale >= 1 {
 			concentric.scalingDirection = 0
 		}
-	}	
+	}
 
 	for _, ring := range concentric.rings {
 		progress := float64(now.Sub(ring.startedAt)) / float64(concentricRingLifetime) / 3
