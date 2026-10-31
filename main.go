@@ -58,6 +58,7 @@ func main() {
 	drawDotSphere()
 	drawTwister()
 
+	drawPlane()
 	drawBoingBall(192, 102, 0)
 
 	_ = renderer.Destroy()
@@ -179,6 +180,35 @@ func drawRotoTunnel(imageName string) {
 			}
 		}
 		effects.RunRotoTunnel()
+		updateScreen()
+	}
+}
+
+func drawPlane() {
+
+	var running bool = true
+	var lastPlaneTick uint64
+
+	effects.InitializePlane(renderer, introSettings.windowWidth, introSettings.windowHeight, "flowers_256x256.pcx")
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
+			}
+		}
+
+		now := sdl.GetTicks64()
+		deltaSeconds := 1.0 / 60.0
+		if lastPlaneTick != 0 {
+			deltaSeconds = float64(now-lastPlaneTick) / 1000.0
+		}
+		lastPlaneTick = now
+
+		effects.RenderPlane(deltaSeconds)
 		updateScreen()
 	}
 }
