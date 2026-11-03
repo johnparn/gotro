@@ -301,7 +301,18 @@ func drawBoingBall(R, G, B uint8) {
 func drawSceneCoppers() {
 
 	effects.InitializeStars2(renderer, introSettings.windowWidth, introSettings.windowHeight)
-	effects.InitializeCopper(renderer, introSettings.windowWidth, introSettings.windowHeight)
+	copperColors := effects.CopperPalette{
+		{Center: sdl.Color{R: 255, G: 220, B: 210, A: 255}, Edge: sdl.Color{R: 160, G: 35, B: 25, A: 255}},
+		{Center: sdl.Color{R: 255, G: 235, B: 190, A: 255}, Edge: sdl.Color{R: 175, G: 95, B: 20, A: 255}},
+		{Center: sdl.Color{R: 255, G: 250, B: 210, A: 255}, Edge: sdl.Color{R: 155, G: 125, B: 25, A: 255}},
+		{Center: sdl.Color{R: 220, G: 255, B: 215, A: 255}, Edge: sdl.Color{R: 45, G: 145, B: 35, A: 255}},
+		{Center: sdl.Color{R: 210, G: 255, B: 255, A: 255}, Edge: sdl.Color{R: 25, G: 135, B: 155, A: 255}},
+		{Center: sdl.Color{R: 215, G: 225, B: 255, A: 255}, Edge: sdl.Color{R: 45, G: 65, B: 165, A: 255}},
+		{Center: sdl.Color{R: 245, G: 215, B: 255, A: 255}, Edge: sdl.Color{R: 115, G: 35, B: 155, A: 255}},
+		{Center: sdl.Color{R: 255, G: 215, B: 240, A: 255}, Edge: sdl.Color{R: 165, G: 35, B: 95, A: 255}},
+		{Center: sdl.Color{R: 255, G: 225, B: 225, A: 255}, Edge: sdl.Color{R: 145, G: 30, B: 50, A: 255}},
+	}
+	effects.InitializeCopper(renderer, introSettings.windowWidth, introSettings.windowHeight, copperColors)
 
 	var running bool = true
 

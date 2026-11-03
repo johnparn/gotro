@@ -12,21 +12,30 @@ const (
 	copperLineHeight = 9
 )
 
+type CopperColor struct {
+	Center sdl.Color
+	Edge   sdl.Color
+}
+
+type CopperPalette [copperLineCount]CopperColor
+
 type copperSettings struct {
 	renderer  *sdl.Renderer
 	width     int
 	height    int
 	startedAt time.Time
+	colors    CopperPalette
 }
 
 var copper = copperSettings{}
 
-// InitializeCopper prepares the moving copper-line effect for the given renderer size.
-func InitializeCopper(renderer *sdl.Renderer, windowWidth int32, windowHeight int32) {
+// InitializeCopper prepares the moving copper-line effect with a color pair for each line.
+func InitializeCopper(renderer *sdl.Renderer, windowWidth int32, windowHeight int32, colors CopperPalette) {
 	copper.renderer = renderer
 	copper.width = int(windowWidth)
 	copper.height = int(windowHeight)
 	copper.startedAt = time.Now()
+	copper.colors = colors
 }
 
 // RunCopper draws copper-colored lines whose vertical positions follow Lissajous motion.
@@ -44,23 +53,8 @@ func RunCopper() {
 		yPosition := centerY + amplitude*yMotion
 		y := int32(math.Round(yPosition))
 
-		colorPhase := elapsed*0.4 + phase
-		red := uint8(80 + 10*(0.2+0.5*math.Sin(colorPhase)))
-		green := uint8(20 + 20*(0.2+0.5*math.Sin(colorPhase+math.Pi/3)))
-		blue := uint8(180 + 30*(0.2+0.5*math.Sin(colorPhase+2*math.Pi/3)))
-
-		verticalProgress := 1 - math.Abs(yPosition-centerY)/amplitude
-		if verticalProgress < 0 {
-			verticalProgress = 0
-		}
-		edgeColor := sdl.Color{
-			R: scaleCopperColor(red, 0.35+0.65*verticalProgress),
-			G: scaleCopperColor(green, 0.35+0.65*verticalProgress),
-			B: scaleCopperColor(blue, 0.35+0.65*verticalProgress),
-			A: 255,
-		}
-		// fmt.Printf("Copper height: %d", copperLineHeight)
-		drawCopper(y, sdl.Color{R: 255, G: 255, B: 255, A: 255}, edgeColor, copperLineHeight+(line*2))
+		colors := copper.colors[line]
+		drawCopper(y, colors.Center, colors.Edge, copperLineHeight+(line*2))
 	}
 }
 
@@ -99,8 +93,4 @@ func interpolateCopperColor(start sdl.Color, end sdl.Color, amount float64) sdl.
 		B: interpolate(start.B, end.B),
 		A: interpolate(start.A, end.A),
 	}
-}
-
-func scaleCopperColor(channel uint8, shade float64) uint8 {
-	return uint8(float64(channel) * shade)
 }
