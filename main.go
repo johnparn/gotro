@@ -47,6 +47,7 @@ func main() {
 	// introSettings.windowHeight = sceneHeight
 
 	drawSceneScroll()
+	drawSceneCoppers()
 	drawScenePlasma()
 	drawRotoTunnel("hexagon.bmp")
 
@@ -294,6 +295,34 @@ func drawBoingBall(R, G, B uint8) {
 		}
 		effects.BoingBall()
 		updateScreen()
+	}
+}
+
+func drawSceneCoppers() {
+
+	effects.InitializeStars2(renderer, introSettings.windowWidth, introSettings.windowHeight)
+	effects.InitializeCopper(renderer, introSettings.windowWidth, introSettings.windowHeight)
+
+	var running bool = true
+
+	for running {
+		// Quit this scene
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.GetType() {
+
+			case sdl.KEYUP:
+				running = false
+			case sdl.MOUSEBUTTONDOWN:
+				running = false
+			}
+
+		}
+
+		effects.RunCopper()
+		effects.RunStars2()
+
+		updateScreen()
+
 	}
 }
 
@@ -642,24 +671,24 @@ func drawSceneSinus(startTick uint64) {
 		if ticks >= startTick+1000 {
 			effects.SineWave(renderer, &sine[1], introSettings.windowWidth, introSettings.windowHeight)
 		}
-		if ticks >= 3000+startTick {
+		if ticks >= 2000+startTick {
 			effects.SineWave(renderer, &sine[0], introSettings.windowWidth, introSettings.windowHeight)
 		}
-		if ticks >= 4500+startTick {
+		if ticks >= 3000+startTick {
 			effects.SineWave(renderer, &sine[2], introSettings.windowWidth, introSettings.windowHeight)
 		}
-		if ticks >= 6000+startTick {
+		if ticks >= 4000+startTick {
 			effects.SineWave(renderer, &sine[3], introSettings.windowWidth, introSettings.windowHeight)
 		}
-		if ticks >= 7000+startTick {
+		if ticks >= 5000+startTick {
 			effects.SineWave(renderer, &sine[4], introSettings.windowWidth, introSettings.windowHeight)
 		}
-		if ticks >= 7500+startTick {
+		if ticks >= 6000+startTick {
 			effects.SineWave(renderer, &sine[5], introSettings.windowWidth, introSettings.windowHeight)
 		}
 
 		// Show cube
-		if ticks >= 8000+startTick {
+		if ticks >= 7000+startTick {
 			effects.SpinningCube(renderer, introSettings.windowWidth, introSettings.windowHeight)
 		}
 
