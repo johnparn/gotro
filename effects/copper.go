@@ -1,6 +1,7 @@
 package effects
 
 import (
+	"fmt"
 	"math"
 	"time"
 
@@ -8,8 +9,9 @@ import (
 )
 
 const (
-	copperLineCount  = 9
-	copperLineHeight = 9
+	copperLineCount     = 9
+	copperLineHeight    = 9
+	copperRotationSpeed = 0.8
 )
 
 type CopperColor struct {
@@ -25,6 +27,10 @@ type copperSettings struct {
 	height    int
 	startedAt time.Time
 	colors    CopperPalette
+	angle     float64
+	lastFrame time.Time
+	rotating  bool
+	settling  bool
 }
 
 var copper = copperSettings{}
@@ -36,14 +42,36 @@ func InitializeCopper(renderer *sdl.Renderer, windowWidth int32, windowHeight in
 	copper.height = int(windowHeight)
 	copper.startedAt = time.Now()
 	copper.colors = colors
+	copper.angle = 0
+	copper.lastFrame = copper.startedAt
+	copper.rotating = false
+	copper.settling = false
 }
 
-// RunCopper draws copper-colored lines whose vertical positions follow Lissajous motion.
-func RunCopper() {
-	if copper.renderer == nil || copper.width <= 0 || copper.height <= 0 {
+// SetCopperRotation enables bar rotation or lets the current rotation finish horizontally.
+func SetCopperRotation(enabled bool) {
+	copper.rotating = enabled
+	if enabled {
+		copper.settling = false
 		return
 	}
 
+	nearestHorizontal := math.Round(copper.angle / math.Pi)
+	if math.Abs(copper.angle-nearestHorizontal*math.Pi) < 1e-9 {
+		copper.angle = nearestHorizontal * math.Pi
+		copper.settling = false
+		return
+	}
+	copper.settling = true
+}
+
+// RunCopper draws animated copper bars and returns any SDL rendering error.
+func RunCopper() error {
+	if copper.renderer == nil || copper.width <= 0 || copper.height <= 0 {
+		return nil
+	}
+
+	updateCopperRotation(time.Now())
 	elapsed := time.Since(copper.startedAt).Seconds()
 	centerY := float64(copper.height) / 2
 	amplitude := float64(copper.height) * 0.25
@@ -54,16 +82,42 @@ func RunCopper() {
 		y := int32(math.Round(yPosition))
 
 		colors := copper.colors[line]
-		drawCopper(y, colors.Center, colors.Edge, copperLineHeight+(line*2))
+		if err := drawCopper(y, colors.Center, colors.Edge, copperLineHeight+(line*2), copper.angle); err != nil {
+			return fmt.Errorf("draw copper bar %d: %w", line, err)
+		}
 	}
+	return nil
 }
 
-func drawCopper(y int32, centerColor sdl.Color, edgeColor sdl.Color, height int) {
-	if height <= 0 {
+func updateCopperRotation(now time.Time) {
+	delta := now.Sub(copper.lastFrame).Seconds()
+	copper.lastFrame = now
+	if !copper.rotating && !copper.settling {
 		return
 	}
 
+	nextAngle := copper.angle + delta*copperRotationSpeed
+	if copper.settling {
+		targetAngle := math.Ceil(copper.angle/math.Pi) * math.Pi
+		if nextAngle >= targetAngle {
+			copper.angle = targetAngle
+			copper.settling = false
+			return
+		}
+	}
+	copper.angle = nextAngle
+}
+
+func drawCopper(y int32, centerColor sdl.Color, edgeColor sdl.Color, height int, angle float64) error {
+	if height <= 0 {
+		return nil
+	}
+
 	center := float64(height-1) / 2
+	centerX := float64(copper.width) / 2
+	centerY := float64(y) + center
+	cosAngle, sinAngle := math.Cos(angle), math.Sin(angle)
+	halfWidth := float64(copper.width) / 2
 	maxDistance := center
 	for offset := 0; offset < height; offset++ {
 		distance := 0.0
@@ -72,14 +126,25 @@ func drawCopper(y int32, centerColor sdl.Color, edgeColor sdl.Color, height int)
 		}
 		color := interpolateCopperColor(centerColor, edgeColor, distance)
 
-		copper.renderer.SetDrawColor(color.R, color.G, color.B, color.A)
-		copper.renderer.FillRect(&sdl.Rect{
-			X: 0,
-			Y: y + int32(offset),
-			W: int32(copper.width),
-			H: 1,
-		})
+		if err := copper.renderer.SetDrawColor(color.R, color.G, color.B, color.A); err != nil {
+			return fmt.Errorf("set copper draw color: %w", err)
+		}
+
+		localY := float64(offset) - center
+		x1 := centerX - halfWidth*cosAngle - localY*sinAngle
+		y1 := centerY - halfWidth*sinAngle + localY*cosAngle
+		x2 := centerX + halfWidth*cosAngle - localY*sinAngle
+		y2 := centerY + halfWidth*sinAngle + localY*cosAngle
+		if err := copper.renderer.DrawLine(
+			int32(math.Round(x1)),
+			int32(math.Round(y1)),
+			int32(math.Round(x2)),
+			int32(math.Round(y2)),
+		); err != nil {
+			return fmt.Errorf("draw copper line: %w", err)
+		}
 	}
+	return nil
 }
 
 func interpolateCopperColor(start sdl.Color, end sdl.Color, amount float64) sdl.Color {
