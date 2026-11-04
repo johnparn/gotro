@@ -315,8 +315,9 @@ func drawSceneCoppers() {
 	effects.InitializeCopper(renderer, introSettings.windowWidth, introSettings.windowHeight, copperColors)
 
 	var running bool = true
-	var startTicks uint64 = sdl.GetTicks64()
-	var currentTicks uint64 = startTicks
+	// For rotating copper bars
+	// var startTicks uint64 = sdl.GetTicks64()
+	// var currentTicks uint64 = startTicks
 
 	for running {
 
@@ -332,18 +333,19 @@ func drawSceneCoppers() {
 
 		}
 
-		if currentTicks-startTicks >= 10000 {
-			effects.SetCopperRotation(true)
-			startTicks = currentTicks
-		} else {
-			effects.SetCopperRotation(false)
-		}
+		// Rotate copper bars every 10 seconds
+		// if currentTicks-startTicks >= 10000 {
+		// 	effects.SetCopperRotation(true)
+		// 	startTicks = currentTicks
+		// } else {
+		// 	effects.SetCopperRotation(false)
+		// }
 
 		effects.RunCopper()
 		effects.RunStars2()
 
 		updateScreen()
-		currentTicks = sdl.GetTicks64()
+		// currentTicks = sdl.GetTicks64()
 	}
 }
 

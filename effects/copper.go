@@ -117,7 +117,7 @@ func drawCopper(y int32, centerColor sdl.Color, edgeColor sdl.Color, height int,
 	centerX := float64(copper.width) / 2
 	centerY := float64(y) + center
 	cosAngle, sinAngle := math.Cos(angle), math.Sin(angle)
-	halfWidth := float64(copper.width) / 2
+	halfWidth := copperBarLength(copper.width, copper.height) / 2
 	maxDistance := center
 	for offset := 0; offset < height; offset++ {
 		distance := 0.0
@@ -145,6 +145,10 @@ func drawCopper(y int32, centerColor sdl.Color, edgeColor sdl.Color, height int,
 		}
 	}
 	return nil
+}
+
+func copperBarLength(width int, height int) float64 {
+	return math.Hypot(float64(width), float64(height))
 }
 
 func interpolateCopperColor(start sdl.Color, end sdl.Color, amount float64) sdl.Color {
