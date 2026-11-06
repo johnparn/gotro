@@ -69,7 +69,7 @@ func InitializeTunnel(sdl_renderer *sdl.Renderer, windowWidth int32, windowHeigh
 
 	tunnelSettings.Renderer = sdl_renderer
 	tunnelSettings.WindowHeight = windowHeight
-	tunnelSettings.WindowWidth = windowHeight
+	tunnelSettings.WindowWidth = windowWidth
 
 	// Init palette
 	var paletteIndex uint8 = 0
